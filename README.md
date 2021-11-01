@@ -33,6 +33,31 @@ Pynsights will open a new browser window and render a graph looking like this:
 
 ![Tracing modules using Pynsight](images/ikke.gif)
 
+# Usage from a different repository
+
+If you cloned the pynsights repo to your local device and want to invoke
+it from another repository, you can tell Python where to find it:
+
+```
+import sys
+sys.path.append('/path/to/pynsights')
+import pynsights
+```
+
+# Enabling and Disabling Pynsights
+
+To (temporarily) suspend pynsights, for instance to improve startup, run:
+
+```
+pynsights.stop_tracing()
+```
+
+To enable pynsights after disabling it, run:
+
+```
+pynsights.start_tracing()
+```
+
 # Zooming out
 
 When you click on "Toplevel", all sub-modules are collapsed into their
