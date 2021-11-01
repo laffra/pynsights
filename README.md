@@ -1,7 +1,9 @@
 # Pynsights
+
 Understand Python code by visualizing how modules interact
 
 # Installation
+
 Clone the repo and setup the environment:
 
 ```
@@ -9,7 +11,6 @@ python3 -m pip install virtualenv\npython3 -m venv env_pynsights
 source env_pynsights/bin/activate
 python3 setup.py install
 ```
-
 
 Publication to pypy will come soon.
 
@@ -23,22 +24,22 @@ python3 example.py
 
 # Usage
 
-To enable Pynsight, add the following to the very top of your main module:
+To enable Pynsights, add the following to the very top of your main module:
 
 ```
 import pynsights
 ```
 
-Pynsights will open a new browser window and render a graph looking like this:
+Pynsights will open a new browser window and render a graph.
 
-![Tracing modules using Pynsight](images/ikke.gif)
+![Tracing modules using Pynsights](images/ikke.gif)
 
 # Zooming out
 
 When you click on "Toplevel", all sub-modules are collapsed into their
 parent module. This reduces the complexity of the graph quite a bit.
 
-![Tracing toplevel modules using Pynsight](images/ikke-toplevel.gif)
+![Tracing toplevel modules using Pynsights](images/ikke-toplevel.gif)
 
 # Trace Calls
 
