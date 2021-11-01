@@ -25,7 +25,8 @@ def run_server_thread():
     """
     Create the socket server in a background thread.
     """
-    webbrowser.open("file://%s/pynsights.html" % os.path.dirname(__file__))
+    html = os.path.abspath(os.path.dirname(__file__))
+    webbrowser.open("file://%s/pynsights.html" % html)
     asyncio.run(start_server())
 
 async def handle_message(websocket, _path):
@@ -94,9 +95,19 @@ def trace(frame, event, _):
     finally:
         return trace
 
+def start_tracing():
+    threading.settrace(trace)
+    sys.settrace(trace)
+
+
+def stop_tracing():
+    threading.settrace(None)
+    sys.settrace(None)
+
 
 threading.Thread(target = run_server_thread).start()
+print("Pynsights: waiting for client to connect...")
 while not alive:
     time.sleep(0.1)
-threading.settrace(trace)
-sys.settrace(trace)
+print("Pynsights: client connected.")
+start_tracing()
