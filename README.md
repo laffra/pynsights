@@ -32,7 +32,7 @@ import pynsights
 
 Pynsights will open a new browser window and render a graph.
 
-![Tracing modules using Pynsights](images/ikke.gif)
+<img src="https://github.com/laffra/pynsights/blob/main/images/Ikke.gif">
 
 # Zooming out
 
