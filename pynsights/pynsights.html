@@ -1,0 +1,367 @@
+<head>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+    <script src="https://unpkg.com/three"></script>
+    <script src="https://unpkg.com/3d-force-graph"></script>
+    <script src="https://unpkg.com/three-spritetext"></script>
+    <script src="https://unpkg.com/three/examples/js/renderers/CSS2DRenderer.js"></script>
+    <style>
+        body {
+            background-color: black;
+        }
+        .node-label {
+            font-size: 12px;
+            padding: 1px 4px;
+            border-radius: 4px;
+            background-color: rgba(0,0,0,0.5);
+            user-select: none;
+        }
+        .info {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            color: white;
+        }
+        .log {
+            position: absolute;
+            top: 40px;
+            left: 10px;
+            color: grey;
+            height: 20px;
+            overflow: hidden;
+            font-size: 17px;
+            font-family: Arial, Helvetica, sans-serif;
+        }
+        .controls {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            color: white;
+        }
+        .paused {
+            display: none;
+            position: absolute;
+            top: 0px;
+            padding: 300px;
+            width: 100%;
+            height: 100%;
+            color: white;
+            font-family: Arial, Helvetica, sans-serif;
+            font-size: 30px;
+            background-color: rgba(0,0,0,0.8);
+        }
+    </style>
+    <body>
+        <div id="graph-container">
+            <div id="3d-graph"></div>
+        </div>
+        <div id="info" class="info">Loading...</div>
+        <div id="paused" class="paused">Pauzing to save GPU cycles...</div>
+        <div class="controls">
+            <span>Regex Filter:</label>
+            <input id="filter"></input>
+            <input type="checkbox" id="toplevel"></input>
+            <label for="toplevel">Toplevel</label>
+            <input type="checkbox" id="counts"></input>
+            <label for="counts">Counts</label>
+            <input type="checkbox" id="dots"></input>
+            <label for="dots">Dots</label>
+        </div>
+        <script type="module">
+
+import { UnrealBloomPass } from 'https://cdn.skypack.dev/three/examples/jsm/postprocessing/UnrealBloomPass.js';
+
+const POLL_DELAY = 100;
+const INACTIVE_DELAY = 30000;
+const PARTICLE_SIZE = 4;
+const PARTICLE_COLOR_SYSTEM = 'white';
+const PARTICLE_COLOR_SELF = 'orange';
+
+const settings = {
+    toplevel: localStorage.getItem("toplevel") == "true",
+    counts: localStorage.getItem("counts") != "false",
+    dots: localStorage.getItem("dots") != "false",
+    filter: localStorage.getItem("filter") || "",
+};
+const sprites = {};
+const Graph = createGraph();
+const linkMap = {};
+const moduleMap = {};
+const newLinks = [];
+
+var liveLinks = {};
+var graphData = { nodes: [], links: [] };
+var count = 0;
+var connected = false;
+var lastMouseMove = new Date().getTime();
+var selectedNode;
+
+$("body").on("mousemove", () => lastMouseMove = new Date().getTime());
+$("body").on("click", () => {
+    if (!selectedNode) {
+        $(".log").remove();
+    }
+    log(`########### Stopped Logging ${selectedNode.id} ##########`);
+    selectedNode = undefined;
+});
+$(window).resize(() => location.reload());
+document.title = "Pynsights";
+
+$("#toplevel")
+    .prop("checked", settings.toplevel)
+    .on("change", () => {
+        settings.toplevel = $("#toplevel").is(":checked");
+        localStorage.setItem("toplevel", settings.toplevel);
+        location.reload();
+    });
+$("#counts")
+    .prop("checked", settings.counts)
+    .on("change", () => {
+        settings.counts = $("#counts").is(":checked");
+        localStorage.setItem("counts", settings.counts);
+        Object.values(sprites).forEach(sprite => sprite.text = settings.counts ? `${count}` : "");
+    });
+$("#dots")
+    .prop("checked", settings.dots)
+    .on("change", () => {
+        settings.dots = $("#dots").is(":checked");
+        localStorage.setItem("dots", settings.dots);
+    });
+$("#filter")
+    .val(settings.filter)
+    .on("change", () => {
+        settings.filter = $("#filter").val();
+        localStorage.setItem("filter", settings.filter);
+        location.reload();
+    });
+
+function createGraph() {
+    const graph = ForceGraph3D({
+        extraRenderers: [new THREE.CSS2DRenderer()]
+    })
+    (document.getElementById('3d-graph'))
+        .graphData({ nodes: [ ], links: [] })
+        .nodeAutoColorBy('group')
+        .nodeThreeObject(node => {
+            const sprite = new SpriteText(node.id);
+            sprite.material.depthWrite = false; // make sprite background transparent
+            sprite.color = node.color;
+            sprite.textHeight = 8;
+            return sprite;
+        })
+        .onNodeClick(node => {
+            if (selectedNode == node) return;
+            selectedNode = node;
+            log(`########### Logging ${node.id} ##########`);
+        })
+        .linkDirectionalParticleColor(link => link.particleColor)
+        .linkDirectionalParticleSpeed(0.02)
+        .linkDirectionalParticleWidth(PARTICLE_SIZE)
+        .linkThreeObjectExtend(true)
+        .linkCurvature(0.1)
+        .linkThreeObject(link => {
+            const sprite = new SpriteText(settings.counts ? `${link.count}` : "");
+            sprite.color = '#555';
+            sprite.textHeight = 5;
+            sprites[link.key] = sprite;
+            return sprite;
+        })
+        .linkPositionUpdate((sprite, { start, end }) => {
+            const middlePos = Object.assign(...['x', 'y', 'z'].map(c => ({
+                [c]: start[c] + (end[c] - start[c]) * 2 / 5 // calc middle point
+            })));
+            Object.assign(sprite.position, middlePos);
+        });
+
+    const bloomPass = new UnrealBloomPass();
+    bloomPass.strength = 2;
+    bloomPass.radius = 1;
+    bloomPass.threshold = 0.1;
+    graph.postProcessingComposer().addPass(bloomPass);
+    graph.d3Force('charge').strength(settings.toplevel ? -500 : -120);
+    return graph;
+}
+
+function getGroup(module) {
+    if (module.module.indexOf(".") == -1) {
+        if (module.filename.startsWith("/Library"))
+            return "__system__";
+        if (module.filename.indexOf("/") == -1)
+            return module.filename;
+        return module.filename.split("/").slice(-2,-1)[0]
+    }
+    return module.module.split(".")[0];
+}
+
+function renderCalls(calls) {
+    initGraphData();
+    indexExistingGraph();
+    addNewGraphData(calls);
+    updateStats();
+    updateGraph();
+}
+
+function indexExistingGraph() {
+    Object.assign(moduleMap, ...graphData.nodes.map(node => ({ [node.id]: node })));
+    Object.assign(linkMap, ...graphData.links.map(link => ({ [linkKey(link.source, link.target)]: link })));
+}
+
+function addNewGraphData(calls) {
+    calls.map(handleCall);
+}
+
+function skipNode(node) {
+    if (!settings.filter) return false;
+    if (node.id.match(settings.filter)) return false;
+    if (node.id.match(settings.filter)) return false;
+    return true;
+}
+
+function log(line) {
+    $(".log").each((index, element) => {
+        const newTop = $(element).css("top").replace("px", "") - 20;
+        $(element).css("top", newTop + "px")
+        if (newTop < 50) {
+            $(element).remove();
+        }
+    });
+    $("<div>")
+        .addClass("log")
+        .css("top", ($("body").height() - 50) + "px")
+        .text(line)
+        .appendTo($("body"));
+
+}
+
+function handleCall(call) {
+    if (selectedNode && selectedNode.id == call.to.module) {
+        log(`${call.to.module}.${call.to.codename}(${call.to.locals})`);
+    }
+    console.log("call", call.from, call.to);
+    addLink(call.from, call.to, call.count);
+}
+
+function initGraphData() {
+    liveLinks = {};
+}
+
+function linkKey(source, target) {
+    return `${source}>${target}`;
+}
+
+function setModuleId(module) {
+    module.id = module.id || settings.toplevel ? getGroup(module) : module.module;
+    if (module.id == "__main__") {
+        module.id = module.filename.replace(/\.py$/, "");
+    }
+}
+
+function addModule(module) {
+    if (moduleMap[module.id] !== undefined) return;
+    const node = {
+        id: module.id,
+        group: getGroup(module),
+        index: graphData.nodes.length,
+    };
+    if (!skipNode(node)) {
+        graphData.nodes.push(node);
+    }
+    moduleMap[module.id] = node;
+}
+
+function getDotColor(module) {
+    const node = moduleMap[module.id];
+    return node && node.color || "white";
+}
+
+function addLink(source, target, count) {
+    setModuleId(source);
+    setModuleId(target);
+    const key = linkKey(source.id, target.id);
+    var link = linkMap[key];
+    if (link === undefined) {
+        addModule(source);
+        addModule(target);
+        link = {
+            source: source.id,
+            target: target.id,
+            key,
+            value: 5,
+            particleColor: getDotColor(source),
+        };
+        if (!skipNode(source) && !skipNode(target)) {
+            newLinks.push(link);
+        }
+        linkMap[key] = link;
+    }
+    link.count = count;
+    if (!skipNode(source) && !skipNode(target)) {
+        liveLinks[key] = link;
+    }
+}
+
+function updateStats() {
+    $("#info")
+        .text([
+            " calls=" + count,
+            " nodes=" + graphData.nodes.length,
+            " links=" + graphData.links.length,
+            " live=" + Object.keys(liveLinks).length,
+        ].join(""));
+}
+
+function shouldRender() {
+    if (document.hidden) return false;
+    const now = new Date().getTime();
+    return now - lastMouseMove < INACTIVE_DELAY;
+}
+
+function updateGraph() {
+    $(".paused").css("display", shouldRender() ? "none" : "block");
+    document.title = "Pynsights " + (shouldRender() ? count.toLocaleString() + " calls" : "(paused)");
+    if (!shouldRender()) return
+    Object.values(liveLinks).map(updateLink);
+    if (newLinks.length == 0) return;
+    graphData.links.push(...newLinks);
+    Graph.graphData(graphData)
+    graphData = Graph.graphData();
+    newLinks.length = 0;
+}
+
+function updateLink(link) {
+    if (settings.dots) {
+        link.particleColor = getDotColor(link.source);
+        Graph.emitParticle(link);
+    }
+    if (settings.counts && sprites[link.key]) {
+        sprites[link.key].text = `${count}`;
+    }
+}
+
+function run_client() {
+    const SOCKET_PORT = 8974;
+    const socket = new WebSocket("ws://localhost:" + SOCKET_PORT);
+    socket.onmessage = function (event) {
+        const data = JSON.parse(event.data)
+        count += data.length;
+        setTimeout(() => socket.send("events"), POLL_DELAY);
+        renderCalls(data);
+    }
+    socket.onopen = function (event) {
+        connected = true;
+        socket.send("events");
+    }
+    socket.onerror = function (error) {
+        setTimeout(run_client, POLL_DELAY);
+    }
+    socket.onclose = function (event) {
+        if (connected) {
+            window.close();
+        }
+    }
+}
+
+run_client();
+
+        </script>
+    </body>
+</head>

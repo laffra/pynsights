@@ -1,0 +1,3 @@
+build/*
+env_pynsights/*
+install.egg-info/*
