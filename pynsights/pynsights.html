@@ -70,7 +70,6 @@
 
 import { UnrealBloomPass } from 'https://cdn.skypack.dev/three/examples/jsm/postprocessing/UnrealBloomPass.js';
 
-const POLL_DELAY = 500;
 const INACTIVE_DELAY = 30000;
 const PARTICLE_SIZE = 4;
 const PARTICLE_COLOR_SYSTEM = 'white';
@@ -94,13 +93,15 @@ var count = 0;
 var connected = false;
 var lastMouseMove = new Date().getTime();
 var selectedNode;
+var poll_delay = 500;
 
 $("body").on("mousemove", () => lastMouseMove = new Date().getTime());
 $("body").on("click", () => {
     if (!selectedNode) {
         $(".log").remove();
+    } else {
+        log(`########### Stopped Logging ${selectedNode.id} ##########`);
     }
-    log(`########### Stopped Logging ${selectedNode.id} ##########`);
     selectedNode = undefined;
 });
 $(window).resize(() => location.reload());
@@ -153,6 +154,11 @@ function createGraph() {
             selectedNode = node;
             log(`########### Logging ${node.id} ##########`);
         })
+        .onNodeDragEnd(node => {
+            node.fx = node.x;
+            node.fy = node.y;
+            node.fz = node.z;
+        })
         .linkDirectionalParticleColor(link => link.particleColor)
         .linkDirectionalParticleSpeed(0.02)
         .linkDirectionalParticleWidth(PARTICLE_SIZE)
@@ -170,6 +176,9 @@ function createGraph() {
                 [c]: start[c] + (end[c] - start[c]) * 2 / 5 // calc middle point
             })));
             Object.assign(sprite.position, middlePos);
+        })
+        .onEngineTick(() => {
+            setPollDelay();
         });
 
     const bloomPass = new UnrealBloomPass();
@@ -236,7 +245,6 @@ function handleCall(call) {
     if (selectedNode && selectedNode.id == call.to.module) {
         log(`${call.to.module}.${call.to.codename}(${call.to.locals})`);
     }
-    console.log("call", call.from, call.to);
     addLink(call.from, call.to, call.count);
 }
 
@@ -273,7 +281,7 @@ function getDotColor(module) {
     return node && node.color || "white";
 }
 
-function addLink(source, target, count) {
+    function addLink(source, target, count) {
     setModuleId(source);
     setModuleId(target);
     const key = linkKey(source.id, target.id);
@@ -327,6 +335,11 @@ function updateGraph() {
     newLinks.length = 0;
 }
 
+function setPollDelay() {
+    const liveCount = Object.values(liveLinks).length;
+    poll_delay = liveCount < 25 ? 100 : liveCount > 50 ? 300 : 200;
+}
+
 function updateLink(link) {
     if (settings.dots) {
         link.particleColor = getDotColor(link.source);
@@ -343,7 +356,7 @@ function run_client() {
     socket.onmessage = function (event) {
         const data = JSON.parse(event.data)
         count += data.length;
-        setTimeout(() => socket.send("events"), POLL_DELAY);
+        setTimeout(() => socket.send("events"), poll_delay);
         renderCalls(data);
     }
     socket.onopen = function (event) {
@@ -351,7 +364,7 @@ function run_client() {
         socket.send("events");
     }
     socket.onerror = function (error) {
-        setTimeout(run_client, POLL_DELAY);
+        setTimeout(run_client, poll_delay);
     }
     socket.onclose = function (event) {
         if (connected) {
