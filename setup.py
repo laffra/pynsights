@@ -20,10 +20,12 @@ class CustomInstall(install):
 
 
 setup(
-    name = 'install',
-    version = '0.1.0',
+    name = 'pyinsights',
+    version = '0.1.1',
     packages = find_packages(),
     install_requires = REQUIRED_PACKAGES,
+    package_data={'': ['LICENSE', 'pyinsights/pynsights.html']},
+    include_package_data=True,
     cmdclass = {
         'install': CustomInstall,
     },
