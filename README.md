@@ -45,13 +45,18 @@ python3 example.py
 
 # Usage
 
-To enable Pynsights, add the following to the very top of your main module:
+To enable Pynsights, add the following import:
 
 ```
 import pynsights
 ```
 
-Pynsights will open a new browser window and render a graph.
+Tracing starts immediately after this import statement. So placing it 
+at the top or right before your __main__ routine influences startup
+time, but also what information you will see related to the bootstrap
+of your application.
+
+As a result of the import, Pynsights will open a new browser window and render a graph.
 
 <img src="https://github.com/laffra/pynsights/blob/main/images/Ikke.gif">
 
