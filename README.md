@@ -12,15 +12,28 @@ pip install git+https://github.com/laffra/pynsights
 
 # Manual Installation Into Local Repo
 
-Clone the repo and setup the environment:
+Clone the repo first:
+
+```
+git clone https://github.com/laffra/pynsights
+```
+
+Optionally, use a virtual environment:
 
 ```
 python3 -m pip install virtualenv\npython3 -m venv env_pynsights
 source env_pynsights/bin/activate
+```
+
+Finally, finish setup and resolve dependencies:
+
+```
 python3 setup.py install
 ```
 
-Publication to pypy will come soon.
+# Installation from Pypi
+
+Publication to pypi will come soon.
 
 # Example
 
