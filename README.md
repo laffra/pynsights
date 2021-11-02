@@ -92,3 +92,15 @@ parent module. This reduces the complexity of the graph quite a bit.
 Click on a graph node to print calls made to that module. 
 Click in the background to disabling tracing again. 
 Click in the background again to clear the current log.
+
+# Animation
+
+You can enable "counts" and "dots" to reduce the amount of information shown in the graph.
+
+# Filter Modules
+
+In the top-right of the Pynsights UI, you can enter a regex to filter the modules being shown. An example would be:
+
+```
+storage|elastic|importer-*|yourmodulenames
+```
