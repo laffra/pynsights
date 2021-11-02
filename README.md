@@ -2,7 +2,15 @@
 
 Understand Python code by visualizing how modules interact
 
-# Installation
+# Installation using Pip
+
+Run the following:
+
+```
+pip install git+https://github.com/laffra/pynsights
+```
+
+# Manual Installation Into Local Repo
 
 Clone the repo and setup the environment:
 
@@ -36,7 +44,7 @@ Pynsights will open a new browser window and render a graph.
 
 # Usage from a different repository
 
-If you cloned the pynsights repo to your local device and want to invoke
+If you used the manual install and cloned the pynsights repo to your local device and want to invoke
 it from another repository, you can tell Python where to find it:
 
 ```
