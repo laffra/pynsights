@@ -4,6 +4,7 @@
 
 import inspect
 import threading
+import traceback
 import time
 import collections
 import asyncio
@@ -62,22 +63,18 @@ def extract_details(frame):
         "module": inspect.getmodule(frame).__name__,
     }
 
-def is_bootstrap_call(frame):
-    while frame:
-        if not inspect.getmodule(frame):
-            return True
-        frame = frame.f_back
-    return False
-
 def trace(frame, event, _):
     """
     Handle a trace event.
     """
     try:
-        if event != "call" or not frame or not frame.f_back or is_bootstrap_call(frame):
+        if event != "call" or not frame or not frame.f_back:
             return trace
-        call_to = extract_details(frame)
-        call_from = extract_details(frame.f_back)
+        try:
+            call_to = extract_details(frame)
+            call_from = extract_details(frame.f_back)
+        except AttributeError as e:
+            return
         if call_to["module"] == call_from["module"]:
             return trace
         call = codes[f"""
@@ -91,7 +88,7 @@ def trace(frame, event, _):
         call["count"] = call.get("count", 0)
         events.append(call)
     except Exception as e:
-        print(e)
+        traceback.print_exc()
     finally:
         return trace
 
