@@ -13,15 +13,19 @@ import os
 import sys
 import webbrowser
 import websockets
+import queue
 
 MY_NAME = "pynsights"
 SOCKET_PORT = 8974
 TRACER_MODULE_NAME = "tracer"
+CALL_BUFFER_TIME = 0.3
 
 codes = collections.defaultdict(dict)
-events = []
+frames = queue.Queue()
+calls = []
 alive = False
 modules = {}
+
 
 def run_server_thread():
     """
@@ -33,14 +37,22 @@ def run_server_thread():
 
 async def handle_message(websocket, _path):
     """
-    Process a message received from the visualization client.
+    Process the first message received from the visualization client.
+    After that, send calls
     """
-    global events, alive
-    async for message in websocket:
-        alive = True
-        if message == "events":
-            data, events = events, []
-            await websocket.send(json.dumps(data))
+    global alive, calls
+    alive = True
+    last_send_time = time.time()
+    while True:
+        call = convert_frame(frames.get())
+        if call:
+            calls.append(call)
+        now = time.time()
+        if not calls or now - last_send_time < CALL_BUFFER_TIME:
+            continue
+        await websocket.send(json.dumps(calls))
+        calls = []
+        last_send_time = now
 
 async def start_server():
     """
@@ -71,35 +83,27 @@ def extract_details(frame):
         "module": get_module(frame),
     }
 
+def convert_frame(frame):
+    try:
+        call_to = extract_details(frame)
+        call_from = extract_details(frame.f_back)
+        if call_to["module"] == call_from["module"]:
+            return None
+        call = codes[f"""{call_to["module"]}>{call_from["module"]}"""]
+        call["from"] = call_from
+        call["to"] = call_to
+        call["count"] = call.get("count", 0)
+        return call
+    except AttributeError as e:
+        return None # only happens for bootstrap calls
+
 def trace(frame, event, _):
     """
     Handle a trace event.
     """
-    try:
-        if event != "call":
-            return trace
-        try:
-            call_to = extract_details(frame)
-            call_from = extract_details(frame.f_back)
-        except AttributeError as e:
-            # this happens only for bootstrap calls
-            return
-        if call_to["module"] == call_from["module"]:
-            return trace
-        call = codes[f"""
-            {call_to["filename"]}
-            {call_to["lineno"]}
-            {call_from["filename"]}
-            {call_from["lineno"]}
-        """]
-        call["from"] = call_from
-        call["to"] = call_to
-        call["count"] = call.get("count", 0)
-        events.append(call)
-    except Exception as e:
-        traceback.print_exc()
-    finally:
-        return trace
+    if event == "call":
+        frames.put(frame)
+    return trace
 
 def start_tracing():
     threading.setprofile(trace)

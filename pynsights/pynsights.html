@@ -93,7 +93,6 @@ var count = 0;
 var connected = false;
 var lastMouseMove = new Date().getTime();
 var selectedNode;
-var poll_delay = 500;
 
 $("body").on("mousemove", () => lastMouseMove = new Date().getTime());
 $("body").on("click", () => {
@@ -176,9 +175,6 @@ function createGraph() {
                 [c]: start[c] + (end[c] - start[c]) * 2 / 5 // calc middle point
             })));
             Object.assign(sprite.position, middlePos);
-        })
-        .onEngineTick(() => {
-            setPollDelay();
         });
 
     const bloomPass = new UnrealBloomPass();
@@ -335,11 +331,6 @@ function updateGraph() {
     newLinks.length = 0;
 }
 
-function setPollDelay() {
-    const liveCount = Object.values(liveLinks).length;
-    poll_delay = liveCount < 25 ? 100 : liveCount > 50 ? 300 : 200;
-}
-
 function updateLink(link) {
     if (settings.dots) {
         link.particleColor = getDotColor(link.source);
@@ -356,15 +347,16 @@ function run_client() {
     socket.onmessage = function (event) {
         const data = JSON.parse(event.data)
         count += data.length;
-        setTimeout(() => socket.send("events"), poll_delay);
+        console.log("handle data", count)
         renderCalls(data);
     }
     socket.onopen = function (event) {
         connected = true;
-        socket.send("events");
+        socket.send("hello");
     }
     socket.onerror = function (error) {
-        setTimeout(run_client, poll_delay);
+        console.log(error)
+        run_client();
     }
     socket.onclose = function (event) {
         if (connected) {
