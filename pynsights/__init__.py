@@ -21,6 +21,7 @@ TRACER_MODULE_NAME = "tracer"
 codes = collections.defaultdict(dict)
 events = []
 alive = False
+modules = {}
 
 def run_server_thread():
     """
@@ -54,13 +55,21 @@ def safe_repr(obj):
     except:
         return f"[{type(obj)}]"
 
+def get_module(frame):
+    key = frame.f_code.co_filename
+    if key in modules:
+        return modules[key]
+    module = inspect.getmodule(frame).__name__
+    modules[key] = module
+    return module
+
 def extract_details(frame):
     return {
         "codename": frame.f_code.co_name,
         "locals": [f"${key}=${safe_repr(value)}" for key,value in frame.f_locals.items()],
         "filename": frame.f_code.co_filename,
         "lineno": frame.f_code.co_firstlineno,
-        "module": inspect.getmodule(frame).__name__,
+        "module": get_module(frame),
     }
 
 def trace(frame, event, _):
