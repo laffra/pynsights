@@ -243,7 +243,7 @@ function log(line) {
 
 function handleCall(call) {
     if (selectedNode && selectedNode.id == call.to.module) {
-        log(`${call.to.module}.${call.to.codename}(${call.to.locals})`);
+        log(`${call.to.module}.${call.to.codename}(...})`);
     }
     addLink(call.from, call.to, call.count);
 }

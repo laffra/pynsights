@@ -66,7 +66,6 @@ def get_module(frame):
 def extract_details(frame):
     return {
         "codename": frame.f_code.co_name,
-        "locals": [f"${key}=${safe_repr(value)}" for key,value in frame.f_locals.items()],
         "filename": frame.f_code.co_filename,
         "lineno": frame.f_code.co_firstlineno,
         "module": get_module(frame),
@@ -77,12 +76,13 @@ def trace(frame, event, _):
     Handle a trace event.
     """
     try:
-        if event != "call" or not frame or not frame.f_back:
+        if event != "call":
             return trace
         try:
             call_to = extract_details(frame)
             call_from = extract_details(frame.f_back)
         except AttributeError as e:
+            # this happens for bootstrap calls
             return
         if call_to["module"] == call_from["module"]:
             return trace
@@ -102,13 +102,13 @@ def trace(frame, event, _):
         return trace
 
 def start_tracing():
-    threading.settrace(trace)
-    sys.settrace(trace)
+    threading.setprofile(trace)
+    sys.setprofile(trace)
 
 
 def stop_tracing():
-    threading.settrace(None)
-    sys.settrace(None)
+    threading.setprofile(None)
+    sys.setprofile(None)
 
 
 threading.Thread(target = run_server_thread).start()
