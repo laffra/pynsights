@@ -76,7 +76,7 @@ def trace(frame, event, _):
     Handle a trace event.
     """
     try:
-        if event != "call" and event != "c_call" :
+        if event != "call":
             return trace
         try:
             call_to = extract_details(frame)

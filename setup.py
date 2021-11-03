@@ -21,7 +21,7 @@ class CustomInstall(install):
 
 setup(
     name = 'pyinsights',
-    version = '0.1.7',
+    version = '0.1.8',
     packages = find_packages(),
     install_requires = REQUIRED_PACKAGES,
     include_package_data=True,
