@@ -76,13 +76,13 @@ def trace(frame, event, _):
     Handle a trace event.
     """
     try:
-        if event != "call":
+        if event != "call" and event != "c_call" :
             return trace
         try:
             call_to = extract_details(frame)
             call_from = extract_details(frame.f_back)
         except AttributeError as e:
-            # this happens for bootstrap calls
+            # this happens only for bootstrap calls
             return
         if call_to["module"] == call_from["module"]:
             return trace
