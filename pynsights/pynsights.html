@@ -70,6 +70,8 @@
 
 import { UnrealBloomPass } from 'https://cdn.skypack.dev/three/examples/jsm/postprocessing/UnrealBloomPass.js';
 
+const PORT = 8974;
+const POLL_DELAY = 100;
 const INACTIVE_DELAY = 30000;
 const PARTICLE_SIZE = 4;
 const PARTICLE_COLOR_SYSTEM = 'white';
@@ -238,6 +240,7 @@ function log(line) {
 }
 
 function handleCall(call) {
+    if (!call) return;
     if (selectedNode && selectedNode.id == call.to.module) {
         log(`${call.to.module}.${call.to.codename}(...})`);
     }
@@ -341,31 +344,17 @@ function updateLink(link) {
     }
 }
 
-function run_client() {
-    const SOCKET_PORT = 8974;
-    const socket = new WebSocket("ws://localhost:" + SOCKET_PORT);
-    socket.onmessage = function (event) {
-        const data = JSON.parse(event.data)
+function get_events() {
+    $.getJSON("events", data => {
         count += data.length;
-        console.log("handle data", count)
         renderCalls(data);
-    }
-    socket.onopen = function (event) {
-        connected = true;
-        socket.send("hello");
-    }
-    socket.onerror = function (error) {
-        console.log(error)
-        run_client();
-    }
-    socket.onclose = function (event) {
-        if (connected) {
-            window.close();
-        }
-    }
+    }).fail(() => {
+        window.close();
+    });
 }
 
-run_client();
+get_events()
+setInterval(get_events, POLL_DELAY);
 
         </script>
     </body>

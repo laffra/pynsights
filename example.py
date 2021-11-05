@@ -30,7 +30,7 @@ def run():
         sys.stdout.flush()
         if n % 10 == 0:
             print()
-        time.sleep(0.5)
+        time.sleep(0.1)
         helloworld()  
     os._exit(0)
 
