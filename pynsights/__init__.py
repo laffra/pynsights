@@ -2,16 +2,17 @@
 Record inter-module calls and save events in a file
 """
 
+import atexit
+import inspect
+import functools
+import os
+import re
 import sys
 import threading
 import time
-import atexit
-import re
-import os
-import inspect
 
 caller = inspect.stack()[-1]
-caller_module = caller.filename.replace(".py", "")
+caller_module = caller[1].replace(".py", "")
 
 output_filename = "%s/pynsights_trace_%s.txt" % (os.path.expanduser('~'), caller_module)
 output = None
@@ -29,6 +30,9 @@ FLUSH_INTERVAL = 1.0
 EVENT_MODULE = 0
 EVENT_CALLSITE = 1
 EVENT_CALL = 2
+EVENT_ANNOTATE = 3
+EVENT_ENTER = 4
+EVENT_EXIT = 6
 
 def get_module(frame):
     filename = frame.f_code.co_filename
@@ -76,7 +80,7 @@ def flush():
 def record(line):
     buffer.append(line)
 
-def trace(frame, event, _):
+def process_call(frame, event, _):
     global call_count, last_flush
     try:
         if event == "call":
@@ -95,21 +99,50 @@ def trace(frame, event, _):
         import traceback
         traceback.print_exc()
     finally:
-        return trace
+        return process_call
 
 def start_tracing():
     global output
     output = open(output_filename, "w")
     print("Pynsights: tracing started. See", output_filename)
-    threading.setprofile(trace)
-    sys.setprofile(trace)
+    threading.setprofile(process_call)
+    sys.setprofile(process_call)
+
 
 def stop_tracing():
+    global output
     threading.setprofile(None)
     sys.setprofile(None)
-    flush()
-    print("Pynsights: tracing finished. Traced %d calls. See" % call_count, output_filename)
+    if buffer and output:
+        flush()
+        print("Pynsights: tracing finished. Traced %d calls. See" % call_count, output_filename)
+        output = None
 
+
+def annotate(message):
+    record("%s %s\n" % (EVENT_ANNOTATE, message))
+
+
+def annotate_enter(func):
+    record("%s %s\n" % (EVENT_ENTER, func))
+
+
+def annotate_exit(func):
+    record("%s %s\n" % (EVENT_EXIT, func))
+
+
+def trace(func):
+    """Decorates a function to record its execution."""
+
+    @functools.wraps(func)
+    def tracefunc_closure(*args, **kwargs):
+        method = "%s %s(args=%s, kwargs=%s)" % (func.__module__, func, args, kwargs)
+        annotate_enter(method)
+        result = func(*args, **kwargs)
+        annotate_exit(method)
+        return result
+
+    return tracefunc_closure
 
 class Recorder(object):
     def __init__(self, file=None):
@@ -120,7 +153,7 @@ class Recorder(object):
     def __enter__(self):
         start_tracing()
 
-    def __exit__(self):
+    def __exit__(self, type, value, traceback):
         stop_tracing()
 
 

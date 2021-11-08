@@ -19,16 +19,18 @@ import pynsights
 # See README.md for more information.
 #
 
-from hello.helloworld import helloworld
+import pynsights
+# from hello.helloworld import helloworld
 import time
 
+@pynsights.trace
 def run():
     for n in range(1, 101):
         time.sleep(0.01)
-        helloworld()  
-
+        pynsights.annotate("helloworld - %d" % n)
+        # helloworld()  
 
 
 if __name__ == "__main__":
-    run()
-
+    with pynsights.Recorder():
+        run()
