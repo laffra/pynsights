@@ -21,18 +21,14 @@ import pynsights
 
 from hello.helloworld import helloworld
 import time
-import os
-import sys
 
 def run():
     for n in range(1, 101):
-        print("%02d " % n, end="")
-        sys.stdout.flush()
-        if n % 10 == 0:
-            print()
-        time.sleep(0.1)
+        time.sleep(0.01)
         helloworld()  
-    os._exit(0)
+
+
 
 if __name__ == "__main__":
     run()
+

@@ -10,80 +10,47 @@ Run the following:
 pip install git+https://github.com/laffra/pynsights
 ```
 
-# Manual Installation Into Local Repo
+# Make a Recording
 
-Clone the repo first:
-
-```
-git clone https://github.com/laffra/pynsights
-```
-
-Optionally, use a virtual environment:
-
-```
-python3 -m pip install virtualenv\npython3 -m venv env_pynsights
-source env_pynsights/bin/activate
-```
-
-Finally, finish setup and resolve dependencies:
-
-```
-python3 setup.py install
-```
-
-# Installation from Pypi
-
-Publication to pypi will come soon.
-
-# Example
-
-For an example how Pynsights works, run the following:
-
-```
-python3 example.py 
-```
-
-# Usage
-
-To enable Pynsights, add the following import:
+To enable Pynsights, import Pynsights and start the recorder:
 
 ```
 import pynsights
+
+if __name__ == "__main__":
+    with pynsights.Recorder():
+        App().run()
 ```
 
-Tracing starts immediately after this import statement. So placing it 
-at the top or right before your __main__ routine influences startup
-time, but also what information you will see related to the bootstrap
-of your application.
+Tracing starts for the duration of the context manager. 
+You can manually toggle the tracer using
+`Pynsights.start_tracing()` and `Pynsights.stop_tracing()`.
 
-As a result of the import, Pynsights will open a new browser window and render a graph.
+# Change the Recording Location
 
-<img src="https://github.com/laffra/pynsights/blob/main/images/Ikke.gif">
-
-# Usage from a different repository
-
-If you used the manual install and cloned the pynsights repo to your local device and want to invoke
-it from another repository, you can tell Python where to find it:
+If your main script is named `main`, the recording is save in `~/pynsight_trace_main.txt`.
+By passing a different file path to the recorder, you can change where the recording is saved:
 
 ```
-import sys
-sys.path.append('/path/to/pynsights')
-import pynsights
+if __name__ == "__main__":
+    with pynsights.Recorder("~/main.txt"):
+        App().run()
 ```
 
-# Enabling and Disabling Pynsights
+# Viewing the Recording
 
-To (temporarily) suspend pynsights, for instance to improve startup, run:
-
-```
-pynsights.stop_tracing()
-```
-
-To enable pynsights after disabling it, run:
+To view the recording, run the following:
 
 ```
-pynsights.start_tracing()
+python pynsights/view.py ~/pynsights_trace_main.txt
 ```
+
+This does two things: 1. convert the recording into HTML format and 2. open it.
+The resulting output can be found in `~/pynsights_trace_main.html`, or
+whatever location where you chose to save the recording. This HTML file
+is fully standalone and can be hosted. 
+
+Here is [an example recording](https://chrislaffra.com/pynsights_trace_main.html).
 
 # Zooming out
 
@@ -92,20 +59,12 @@ parent module. This reduces the complexity of the graph quite a bit.
 
 ![Tracing toplevel modules using Pynsights](images/ikke-toplevel.gif)
 
-# Trace Calls
+# Bloom
 
-Click on a graph node to print calls made to that module. 
-Click in the background to disabling tracing again. 
-Click in the background again to clear the current log.
+Enable or disable `Bloom` to change the graph rendering.
 
-# Animation
+# Counts and Dots
 
-You can enable "counts" and "dots" to reduce the amount of information shown in the graph.
-
-# Filter Modules
-
-In the top-right of the Pynsights UI, you can enter a regex to filter the modules being shown. An example would be:
-
-```
-storage|elastic|importer-*|yourmodulenames
-```
+With `Counts` and `Dots` the links in the graph can be annotated with 
+number of calls made between the two modules it links and when messages
+are sent between the modules.

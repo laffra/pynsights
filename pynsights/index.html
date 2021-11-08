@@ -1,0 +1,435 @@
+<head>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+    <link rel="stylesheet" href="https://ajax.googleapis.com/ajax/libs/jqueryui/1.12.1/themes/smoothness/jquery-ui.css">
+    <script src="https://ajax.googleapis.com/ajax/libs/jqueryui/1.12.1/jquery-ui.min.js"></script>
+    <script src="https://unpkg.com/three"></script>
+    <script src="https://unpkg.com/3d-force-graph"></script>
+    <script src="https://unpkg.com/three-spritetext"></script>
+    <script src="https://unpkg.com/three/examples/js/renderers/CSS2DRenderer.js"></script>
+    <style>
+        body {
+            background-color: black;
+        }
+        .node-label {
+            font-size: 12px;
+            padding: 1px 4px;
+            border-radius: 4px;
+            background-color: rgba(0,0,0,0.5);
+            user-select: none;
+        }
+        .info {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            color: white;
+        }
+        .log {
+            position: absolute;
+            top: 40px;
+            left: 10px;
+            color: grey;
+            height: 20px;
+            overflow: hidden;
+            font-size: 17px;
+            font-family: Arial, Helvetica, sans-serif;
+        }
+        .controls {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            color: white;
+            margin-right: 8px;
+        }
+        .paused {
+            display: none;
+            position: absolute;
+            top: 0px;
+            padding: 300px;
+            width: 100%;
+            height: 100%;
+            color: white;
+            font-family: Arial, Helvetica, sans-serif;
+            font-size: 30px;
+            background-color: rgba(0,0,0,0.8);
+        }
+        #timemax {
+            display: inline-block;
+            margin-right: 21px;
+        }
+        #timelinetime {
+            position: absolute;
+            top: 102px;
+            display: block;
+            color: white;
+        }
+        #timeline {
+            position: absolute;
+            top: 12px;
+            left: 0;
+            width: 400px;
+            height: 100px;
+            margin-left: 12px;
+            margin-right: 12px;
+            background-color: black;
+            border: 1px solid white
+        }
+        #timelinehandle {
+            position: relative;
+            top: 0;
+            left: 0;
+            width: 2px;
+            height: 100px;
+            background-color: orange;
+        }
+        #timelinehover {
+            position: absolute;
+            z-index: 1000;
+            top: -100px;
+            left: 0;
+            padding: 4px;
+            background-color: white;
+            border-width: 0;
+        }
+        .timelinemarker {
+            position: absolute;
+            width: 6px;
+            height: 6px;
+            border-radius: 3px;
+        }
+        .timelinemarker:hover {
+            position: absolute;
+            width: 12px;
+            height: 12px;
+            border-radius: 6px;
+        }
+    </style>
+    <body>
+        <div id="graph-container">
+            <div id="3d-graph"></div>
+        </div>
+        <div id="paused" class="paused">Pauzing to save GPU cycles...</div>
+        <div id="timeline">
+            <div id="timelinehandle"></div>
+            <div id="timelinetime">0</div>
+            <div id="timelinehover"></div>
+        </div>
+        <div id="timemax">0</div>
+        <div class="controls">
+            <input type="checkbox" id="bloom"></input>
+            <label for="bloom">Bloom</label>
+            <input type="checkbox" id="toplevel"></input>
+            <label for="toplevel">Toplevel</label>
+            <input type="checkbox" id="counts"></input>
+            <label for="counts">Counts</label>
+            <input type="checkbox" id="dots"></input>
+            <label for="dots">Dots</label>
+        </div>
+        <script type="module">
+
+import { UnrealBloomPass } from 'https://cdn.skypack.dev/three/examples/jsm/postprocessing/UnrealBloomPass.js';
+
+const PARTICLE_SIZE = 4;
+const PARTICLE_COLOR_SYSTEM = 'white';
+const PARTICLE_COLOR_SELF = 'orange';
+
+const settings = {
+    toplevel: localStorage.getItem("toplevel") == "true",
+    counts: localStorage.getItem("counts") != "false",
+    dots: localStorage.getItem("dots") != "false",
+    bloom: localStorage.getItem("bloom") == "true",
+};
+const sprites = {};
+const Graph = createGraph();
+const linkMap = {};
+const nodeMap = {};
+
+var newNodes = {}
+var newLinks = {}
+var liveLinks = {}
+var graphData = Graph.graphData();
+
+const KEY_MODULE = 0
+const KEY_CALL = 1
+const KEY_TIMESTAMP = 2
+
+const modulenames = /*MODULENAMES*/ [];
+const callsites = /*CALLSITES*/ [];
+const calls = /*CALLS*/ [];
+const duration = /*DURATION*/ 0;
+
+var PLAY_SECTION_DURATION = 100
+
+$(window).resize(() => location.reload());
+
+document.title = "Pynsights";
+
+$('#timemax').text((duration / 1000).toFixed(1) + "s");
+$('#timelinehandle').draggable({
+    axis: "x",
+    containment: "parent",
+});
+
+String.prototype.hashCode = function() {
+    const len = this.length;
+    var hash = 0;
+    for (var n = 0; n < len; n++) {
+        hash  = ((hash << 5) - hash + this.charCodeAt(n)) << 0;
+    }
+    return hash + 2147483647 + 1;
+};
+
+function annotateTimeLine(call) {
+    const timeline = $("#timeline");
+    const [when, callsiteIndex] = call;
+    const x = getX(when);
+    const [source, target] = callsites[callsiteIndex];
+    const y = getModule(source).hashCode() % 100;
+    var color;
+    try {
+        color = graphData.nodes[source].color;
+    } catch(e) {
+        color = "lightblue";
+    }
+    const title = "Call from " + 
+        getGroup(source) + "." + getModule(source) + " to " + 
+        getGroup(target) + "." + getModule(target);
+    $("<div>")
+        .addClass("timelinemarker")
+        .css({
+            left: x,
+            top: y,
+            backgroundColor: color,
+        })
+        .hover(() => {
+            $("#timelinehover")
+                .css({
+                    left: x + 20,
+                    top: y - 10,
+                })
+                .text(title);
+        })
+        .appendTo(timeline);
+}
+
+function getX(when) {
+    return Math.round(when * ($("#timeline").width() - 24) / duration) + 12;
+}
+
+function updateTimeline(call) {
+    const [when, callsite] = call;
+    $("#timelinehandle")
+        .css("left", getX(when));
+    $("#timelinetime")
+        .css("left", getX(when))
+        .text((when / 1000).toFixed(1) + "s");
+    annotateTimeLine(call);
+}
+
+$("#toplevel")
+    .prop("checked", settings.toplevel)
+    .on("change", () => {
+        settings.toplevel = $("#toplevel").is(":checked");
+        localStorage.setItem("toplevel", settings.toplevel);
+        location.reload();
+    });
+$("#bloom")
+    .prop("checked", settings.bloom)
+    .on("change", () => {
+        settings.bloom = $("#bloom").is(":checked");
+        localStorage.setItem("bloom", settings.bloom);
+        location.reload();
+    });
+$("#counts")
+    .prop("checked", settings.counts)
+    .on("change", () => {
+        settings.counts = $("#counts").is(":checked");
+        localStorage.setItem("counts", settings.counts);
+        Object.values(sprites).forEach(sprite => sprite.text = settings.counts ? `${count}` : "");
+    });
+$("#dots")
+    .prop("checked", settings.dots)
+    .on("change", () => {
+        settings.dots = $("#dots").is(":checked");
+        localStorage.setItem("dots", settings.dots);
+    });
+
+function createGraph() {
+    const graph = ForceGraph3D({
+        extraRenderers: [new THREE.CSS2DRenderer()]
+    })
+    (document.getElementById('3d-graph'))
+        .nodeAutoColorBy('group')
+        .nodeThreeObject(node => {
+            const sprite = new SpriteText(node.id);
+            sprite.material.depthWrite = false; // make sprite background transparent
+            sprite.color = node.color;
+            sprite.textHeight = 8;
+            return sprite;
+        })
+        .onNodeDragEnd(node => {
+            node.fx = node.x;
+            node.fy = node.y;
+            node.fz = node.z;
+        })
+        .linkDirectionalParticleColor(link => link.particleColor)
+        .linkDirectionalParticleSpeed(0.07)
+        .linkDirectionalParticleWidth(PARTICLE_SIZE)
+        .linkThreeObjectExtend(true)
+        .linkCurvature(0.1)
+        .linkThreeObject(link => {
+            const sprite = new SpriteText(settings.counts ? `${link.count}` : "");
+            sprite.color = '#555';
+            sprite.textHeight = 5;
+            sprites[link.key] = sprite;
+            return sprite;
+        })
+        .linkPositionUpdate((sprite, { start, end }) => {
+            const middlePos = Object.assign(...['x', 'y', 'z'].map(c => ({
+                [c]: start[c] + (end[c] - start[c]) * 2 / 5 // calc middle point
+            })));
+            Object.assign(sprite.position, middlePos);
+        });
+
+    if (settings.bloom) {
+        const bloomPass = new UnrealBloomPass();
+        bloomPass.strength = 2;
+        bloomPass.radius = 1;
+        bloomPass.threshold = 0.1;
+        graph.postProcessingComposer().addPass(bloomPass);
+    }
+
+    graph.d3Force('charge').strength(settings.toplevel ? -500 : -200);
+    return graph;
+}
+
+function updateGraph() {
+    if (!Object.values(newLinks).length) return;
+    const { nodes, links } = Graph.graphData();
+    Graph.graphData({
+        nodes: [...nodes, ...Object.values(newNodes)],
+        links: [...links, ...Object.values(newLinks)],
+    });
+    graphData = Graph.graphData();
+    newLinks = {};
+    newNodes = {};
+}
+
+function updateLinks() {
+    Object.values(liveLinks).map(updateLink);
+    liveLinks = {};
+}
+
+function getModule(index) {
+    return modulenames[index][settings.toplevel ? 0 : 1];
+}
+
+function getGroup(index) {
+    return modulenames[index][0];
+}
+
+function linkKey(source, target) {
+    return `${source}>${target}`;
+}
+
+function addNode(node) {
+    if (nodeMap[node.id]) return;
+    node.group = 
+    newNodes[node.id] = node;
+    nodeMap[node.id] = node;
+}
+
+function getDotColor(module) {
+    const node = nodeMap[module.id];
+    return node && node.color || "white";
+}
+
+function addLink(when, sourceIndex, targetIndex) {
+    const source = {
+        id: getModule(sourceIndex),
+        group: getGroup(sourceIndex),
+    };
+    const target = {
+        id: getModule(targetIndex),
+        group: getGroup(targetIndex),
+    };
+    addNode(source);
+    addNode(target);
+    const key = linkKey(source.id, target.id);
+    var link = linkMap[key];
+    if (link === undefined) {
+        link = {
+            source: source.id,
+            target: target.id,
+            key,
+            value: 5,
+            count: 0,
+            particleColor: getDotColor(source),
+        };
+        newLinks[key] = link;
+        linkMap[key] = link;
+    }
+    link.count++;
+    liveLinks[key] = { when, link };
+}
+
+function shouldRender() {
+    if (document.hidden) return false;
+    return true;
+}
+
+function updateLink(event) {
+    const { when, link } = event;
+    if (settings.dots) {
+        link.particleColor = getDotColor(link.source);
+        Graph.emitParticle(link);
+    }
+    if (settings.counts && sprites[link.key]) {
+        sprites[link.key].text = `${link.count}`;
+    }
+}
+
+function getWhen(n) {
+    const [ when, _ ] = calls[n];
+    return when;
+}
+
+function addToGraph(call) {
+    const [when, callsiteIndex] = call;
+    const [source, target] = callsites[callsiteIndex];
+    if (getGroup(source) == "bootstrap") return;
+    if (getGroup(target) == "bootstrap") return;
+    addLink(when, source, target);
+}
+
+function findSectionEnd(n) {
+    const start = getWhen(n);
+    while (n < calls.length && getWhen(n) - start < PLAY_SECTION_DURATION) {
+        n++;
+    }
+    return n;
+}
+
+function getTimeMillis() {
+    return new Date().getTime();
+}
+
+function play(n) {
+    function playSection() {
+        const sectionEnd = findSectionEnd(n);
+        const start = getTimeMillis();
+        while (n++ < sectionEnd) {
+            addToGraph(calls[n])
+        }
+        updateGraph();
+        updateLinks();
+        updateTimeline(calls[n-1]);
+        const end = getTimeMillis();
+        setTimeout(playSection, Math.max(1, PLAY_SECTION_DURATION - (end - start)));
+    }
+    setTimeout(playSection, 1);
+}
+
+play(0);
+          </script>
+    </body>
+</head>

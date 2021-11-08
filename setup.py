@@ -1,11 +1,10 @@
 import atexit
-from distutils import cmd
 from setuptools import setup, find_packages
 from setuptools.command.install import install
 from subprocess import check_call
 
 REQUIRED_PACKAGES = [
-    'websockets',
+    "websocket-client",
 ]
 
 
@@ -21,7 +20,7 @@ class CustomInstall(install):
 
 setup(
     name = 'pyinsights',
-    version = '0.1.9',
+    version = '0.1.10',
     packages = find_packages(),
     install_requires = REQUIRED_PACKAGES,
     include_package_data=True,

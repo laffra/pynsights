@@ -1,3 +1,4 @@
 build/*
 env_pynsights/*
 install.egg-info/*
+pyinsights.egg-info/*
