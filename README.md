@@ -12,7 +12,7 @@ pip install git+https://github.com/laffra/pynsights
 
 # Make a Recording
 
-To enable Pynsights, import Pynsights and start the recorder:
+To enable Pynsights, import the module and start the recorder:
 
 ```
 import pynsights
@@ -22,7 +22,7 @@ if __name__ == "__main__":
         App().run()
 ```
 
-Tracing starts for the duration of the context manager. 
+Tracing is active for the duration of the context manager. 
 You can manually toggle the tracer using
 `Pynsights.start_tracing()` and `Pynsights.stop_tracing()`.
 
