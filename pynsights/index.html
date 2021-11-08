@@ -96,6 +96,15 @@
             height: 6px;
             border-radius: 3px;
         }
+        #timelineplay {
+            position: absolute;
+            right: 0;
+            top: 0;
+            color: white;
+            margin-right: 4px;
+            text-decoration: underline;
+            cursor: pointer;
+        }
         .timelineannotation {
             position: absolute;
             width: 8px;
@@ -119,6 +128,7 @@
             <div id="timelinehandle"></div>
             <div id="timelinetime">0</div>
             <div id="timelinehover"></div>
+            <div id="timelineplay">stop</div>
         </div>
         <div id="timemax">0</div>
         <div class="controls">
@@ -154,6 +164,7 @@ var newNodes = {}
 var newLinks = {}
 var liveLinks = {}
 var graphData = Graph.graphData();
+var playIndex = 0;
 
 const modulenames = /*MODULENAMES*/ [];
 const callsites = /*CALLSITES*/ [];
@@ -168,9 +179,30 @@ $(window).resize(() => location.reload());
 document.title = "Pynsights";
 
 $('#timemax').text((duration / 1000).toFixed(1) + "s");
-$('#timelinehandle').draggable({
-    axis: "x",
-    containment: "parent",
+$('#timeline').click((event) => {
+    const x = event.pageX - $("#timeline").position().left - 24;
+    const gotoWhen = x * duration / ($("#timeline").width() - 24);
+    var index = 0;
+    for (const call of calls) {
+        // linear search, consider binary search for large recordings...
+        const [when, callsite] = call;
+        if (when > gotoWhen) {
+            playIndex = Math.round(Math.min(calls.length - 1, index));
+            updateTimeline(calls[playIndex-1]);
+            // startPlaying();
+            return;
+        }
+        index++;
+    }
+    console.log("did not find when", gotoWhen);
+});
+$('#timelineplay').click((event) => {
+    if (!isPlaying()) {
+        startPlaying();
+    } else {
+        stopPlaying();
+    }
+    event.stopPropagation();
 });
 
 String.prototype.hashCode = function() {
@@ -441,24 +473,40 @@ function playAnnotations() {
     }
 }
 
-function playCalls(n) {
+function playCalls() {
     function playSection() {
-        const sectionEnd = findSectionEnd(n);
+        const sectionEnd = findSectionEnd(playIndex);
         const start = getTimeMillis();
-        while (n++ < sectionEnd) {
-            addToGraph(calls[n])
+        while (isPlaying() && playIndex < sectionEnd) {
+            addToGraph(calls[playIndex++])
         }
         updateGraph();
         updateLinks();
-        updateTimeline(calls[n-1]);
+        updateTimeline(calls[playIndex-1]);
         const end = getTimeMillis();
-        setTimeout(playSection, Math.max(1, PLAY_SECTION_DURATION - (end - start)));
+        if (isPlaying()) {
+            setTimeout(playSection, Math.max(1, PLAY_SECTION_DURATION - (end - start)));
+        }
     }
     setTimeout(playSection, 1);
 }
 
-playAnnotations();
-playCalls(0);
+function isPlaying() {
+    return $("#timelineplay").text() == "stop";
+}
+
+function startPlaying() {
+    $("#timelineplay").text("stop")
+    playAnnotations();
+    playCalls();
+}
+
+function stopPlaying() {
+    $("#timelineplay").text("start")
+}
+
+startPlaying();
+
           </script>
     </body>
 </head>
