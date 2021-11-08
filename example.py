@@ -20,7 +20,7 @@ import pynsights
 #
 
 import pynsights
-# from hello.helloworld import helloworld
+from hello.helloworld import helloworld
 import time
 
 @pynsights.trace
@@ -28,7 +28,7 @@ def run():
     for n in range(1, 101):
         time.sleep(0.01)
         pynsights.annotate("helloworld - %d" % n)
-        # helloworld()  
+        helloworld()  
 
 
 if __name__ == "__main__":

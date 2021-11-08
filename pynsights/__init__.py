@@ -32,7 +32,7 @@ EVENT_CALLSITE = 1
 EVENT_CALL = 2
 EVENT_ANNOTATE = 3
 EVENT_ENTER = 4
-EVENT_EXIT = 6
+EVENT_EXIT = 5
 
 def get_module(frame):
     filename = frame.f_code.co_filename
@@ -119,16 +119,18 @@ def stop_tracing():
         output = None
 
 
-def annotate(message):
-    record("%s %s\n" % (EVENT_ANNOTATE, message))
+def annotate(message, event=EVENT_ANNOTATE):
+    now = time.time()
+    when = round((now - start) * 1000)
+    record("%s %s %s\n" % (event, when, message))
 
 
 def annotate_enter(func):
-    record("%s %s\n" % (EVENT_ENTER, func))
+    annotate(str(func), EVENT_ENTER)
 
 
 def annotate_exit(func):
-    record("%s %s\n" % (EVENT_EXIT, func))
+    annotate(str(func), EVENT_EXIT)
 
 
 def trace(func):

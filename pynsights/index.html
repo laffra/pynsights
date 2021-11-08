@@ -84,8 +84,8 @@
         #timelinehover {
             position: absolute;
             z-index: 1000;
-            top: -100px;
-            left: 0;
+            top: 20px;
+            left: 20px;
             padding: 4px;
             background-color: white;
             border-width: 0;
@@ -95,6 +95,13 @@
             width: 6px;
             height: 6px;
             border-radius: 3px;
+        }
+        .timelineannotation {
+            position: absolute;
+            width: 8px;
+            height: 8px;
+            border-radius: 4px;
+            border: 1px solid red;
         }
         .timelinemarker:hover {
             position: absolute;
@@ -148,13 +155,10 @@ var newLinks = {}
 var liveLinks = {}
 var graphData = Graph.graphData();
 
-const KEY_MODULE = 0
-const KEY_CALL = 1
-const KEY_TIMESTAMP = 2
-
 const modulenames = /*MODULENAMES*/ [];
 const callsites = /*CALLSITES*/ [];
 const calls = /*CALLS*/ [];
+const annotations = /*ANNOTATIONS*/ [];
 const duration = /*DURATION*/ 0;
 
 var PLAY_SECTION_DURATION = 100
@@ -178,7 +182,7 @@ String.prototype.hashCode = function() {
     return hash + 2147483647 + 1;
 };
 
-function annotateTimeLine(call) {
+function addCallToTimeline(call) {
     const timeline = $("#timeline");
     const [when, callsiteIndex] = call;
     const x = getX(when);
@@ -202,10 +206,6 @@ function annotateTimeLine(call) {
         })
         .hover(() => {
             $("#timelinehover")
-                .css({
-                    left: x + 20,
-                    top: y - 10,
-                })
                 .text(title);
         })
         .appendTo(timeline);
@@ -222,7 +222,29 @@ function updateTimeline(call) {
     $("#timelinetime")
         .css("left", getX(when))
         .text((when / 1000).toFixed(1) + "s");
-    annotateTimeLine(call);
+    addCallToTimeline(call);
+}
+
+function annotateTimeline(annotation) {
+    const [when, message] = annotation;
+    const enterOrExit = message.match(/^Enter |^Exit /);
+    const y = enterOrExit ? 80 : 90;
+    const border = enterOrExit ? "green" : "red";
+    const fill = enterOrExit ? "green" : "transparent";
+    $("<div>")
+        .addClass("timelineannotation")
+        .css({
+            left: getX(when),
+            top: y,
+            borderColor: border,
+            backgroundColor: fill,
+        })
+        .hover(function() {
+            $("#timelinehover")
+                .appendTo($(this))
+                .text(message);
+        })
+        .appendTo(timeline);
 }
 
 $("#toplevel")
@@ -413,7 +435,13 @@ function getTimeMillis() {
     return new Date().getTime();
 }
 
-function play(n) {
+function playAnnotations() {
+    for (const annotation of annotations) {
+        annotateTimeline(annotation);
+    }
+}
+
+function playCalls(n) {
     function playSection() {
         const sectionEnd = findSectionEnd(n);
         const start = getTimeMillis();
@@ -429,7 +457,8 @@ function play(n) {
     setTimeout(playSection, 1);
 }
 
-play(0);
+playAnnotations();
+playCalls(0);
           </script>
     </body>
 </head>
