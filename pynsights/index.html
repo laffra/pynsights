@@ -221,24 +221,24 @@ $(window).resize(() => location.reload());
 
 document.title = "Pynsights";
 
-$('#timemax').text((duration / 1000).toFixed(1) + "s");
-$('#timeline').click((event) => {
+function timelineClick(event) {
     stopPlaying();
     const x = event.pageX - $("#timeline").position().left - 24;
     const gotoWhen = x * duration / ($("#timeline").width() - 24);
-    var index = 0;
-    for (const call of calls) {
+    playIndex = 0;
+    while (playIndex < calls.length) {
         // linear search, consider binary search for large recordings...
-        const [when, callsite, count] = call;
-        if (when > gotoWhen) {
-            setTimeout(function() {
-                playIndex = Math.round(Math.min(calls.length - 1, index));
-                updateTimeline(calls[playIndex-1]);
-            }, 100);
-            return;
+        if (getWhen(playIndex) > gotoWhen) {
+            setTimeout(startPlaying, 1000);
+            return updateTimeline(calls[playIndex-1]);
         }
-        index++;
+        playIndex++;
     }
+}
+$('#timemax').text((duration / 1000).toFixed(1) + "s");
+$('#timeline').click((event) => {
+    stopPlaying();
+    setTimeout(function () { timelineClick(event); }, 1)
 });
 $('#timelineplay').click((event) => {
     if (!isPlaying()) {
@@ -517,8 +517,8 @@ function updateLink(event) {
     }
 }
 
-function getWhen(n) {
-    const [ when, _callsite, _count ] = calls[n];
+function getWhen(index) {
+    const [ when, _callsite, _count ] = calls[index];
     return when;
 }
 
@@ -551,6 +551,7 @@ function playCalls() {
     const clockStart = getTimeMillis();
     const whenStart = getWhen(playIndex);
     function playChunk() {
+        if (!isPlaying()) return;
         const chunkEnd = findChunkEnd(playIndex);
         while (isPlaying() && playIndex < chunkEnd) {
             addToGraph(calls[playIndex++]);
@@ -565,7 +566,7 @@ function playCalls() {
             const whenNow = getWhen(playIndex);
             const clockDuration = clockNow - clockStart;
             const whenDuration = whenNow - whenStart;
-            setTimeout(playChunk, Math.max(1, whenDuration - clockDuration));
+            setTimeout(playChunk, Math.min(500, Math.max(1, whenDuration - clockDuration)));
         }
         updateTimeline(calls[playIndex]);
     }
