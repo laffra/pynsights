@@ -50,9 +50,16 @@ The resulting output can be found in `~/pynsights_trace_main.html`, or
 whatever location where you chose to save the recording. This HTML file
 is fully standalone and can be hosted. 
 
-Here is [an example recording](https://chrislaffra.com/pynsights_trace_main.html).
+![Pynsights timeline](images/timeline.gif)
 
-# Zooming out
+The timeline shows a subset of the modules active in the graph over time. The white labels
+under the timeline are created using `pynsights.annotate(message)`, see below.
+The labels and timeline show the different phases in the program execution.
+
+Here is [the interactive HTML version](https://chrislaffra.com/pynsights_timeline.html). 
+You can interact with it in the browser to stop/start the animation, for instance. Use the left mouse button to rotate the graph, right mouse button to pan, and scroll wheel to zoom.
+
+# Hiding Details
 
 When you click on "Toplevel", all sub-modules are collapsed into their
 parent module. This reduces the complexity of the graph quite a bit.
