@@ -125,7 +125,7 @@
             top: 0;
             width: 5px;
             height: 100%;
-            border: 0px solid lightyellow;
+            border: 0px solid rgb(85, 85, 85);
             border-left-width: 1px;
         }
         .timelinemarker:hover {
@@ -182,7 +182,6 @@ var newLinks = {}
 var liveLinks = {}
 var graphData = Graph.graphData();
 var playIndex = 0;
-var timelineMarkerCount = 0;
 
 const modulenames = /*MODULENAMES*/ [];
 const callsites = /*CALLSITES*/ [];
@@ -199,11 +198,12 @@ for (const r of colorValues) {
         }
     }
 }
+colors.shift(); // remove lightgrey
 function getColor(group) {
     return colors[group.hashCode() % colors.length];
 }
 
-var PLAY_SECTION_DURATION = Math.max(100, calls.length / 1000);
+var PLAY_SECTION_DURATION = Math.max(300, calls.length / 10000);
 
 $(window).resize(() => location.reload());
 
@@ -216,7 +216,7 @@ $('#timeline').click((event) => {
     var index = 0;
     for (const call of calls) {
         // linear search, consider binary search for large recordings...
-        const [when, callsite] = call;
+        const [when, callsite, count] = call;
         if (when > gotoWhen) {
             playIndex = Math.round(Math.min(calls.length - 1, index));
             updateTimeline(calls[playIndex-1]);
@@ -246,19 +246,21 @@ String.prototype.hashCode = function() {
 
 function addCallsToTimeline(index) {
     if (index >= calls.length) return;
-    const end = Math.min(calls.length, index + 3000);
+    const end = Math.min(calls.length, index + 5000);
     while (index < end) {
-        addCallToTimeline(calls[index++]);
+        addCallToTimeline(calls[index]);
+        const lastWhen = calls[index++][0];
+        while (index < end && calls[index][0] < lastWhen + 50) {
+            index += 1;
+        }
     }
     setTimeout(function() { addCallsToTimeline(index); }, 1);
 }
 
 function addCallToTimeline(call) {
     const timeline = $("#timeline");
-    const [when, callsiteIndex] = call;
+    const [when, callsiteIndex, count] = call;
     const x = getX(when);
-    if (timelineMarkerCount > x / 2) return; // too many markers already
-    timelineMarkerCount++;
     const [source, target] = callsites[callsiteIndex];
     const y = getModule(source).hashCode() % 100;
     var color = getColor(getGroup(source));
@@ -284,7 +286,7 @@ function getX(when) {
 }
 
 function updateTimeline(call) {
-    const [when, callsite] = call;
+    const [when, callsite, count] = call;
     $("#timelinehandle")
         .css("left", getX(when));
     $("#timelinetime")
@@ -313,7 +315,7 @@ function annotateTimelineMarker(annotation) {
     $("<div>")
         .addClass("timelineannotationline")
         .css({
-            left: getX(when),
+            left: getX(when) + 4,
         })
         .hover(hover)
         .appendTo(timeline);
@@ -502,12 +504,12 @@ function updateLink(event) {
 }
 
 function getWhen(n) {
-    const [ when, _ ] = calls[n];
+    const [ when, _callsite, _count ] = calls[n];
     return when;
 }
 
 function addToGraph(call) {
-    const [when, callsiteIndex] = call;
+    const [when, callsiteIndex, count] = call;
     const [source, target] = callsites[callsiteIndex];
     if (getGroup(source) == "bootstrap") return;
     if (getGroup(target) == "bootstrap") return;
@@ -551,10 +553,11 @@ function playCalls() {
         }
         updateGraph();
         updateLinks();
-        updateTimeline(calls[playIndex]);
-        if (playIndex == calls.length) {
+        console.log("play", playIndex, calls.length);
+        if (playIndex >= calls.length) {
             stopPlaying();
-        }
+        } 
+        updateTimeline(calls[playIndex]);
         const end = getTimeMillis();
         if (isPlaying()) {
             setTimeout(playSection, Math.max(1, PLAY_SECTION_DURATION - (end - start)));

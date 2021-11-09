@@ -34,6 +34,9 @@ EVENT_ANNOTATE = 3
 EVENT_ENTER = 4
 EVENT_EXIT = 5
 
+class SkipCall(Exception):
+    pass
+
 def get_module(frame):
     filename = frame.f_code.co_filename
     if not filename in filename_index:
@@ -61,13 +64,17 @@ def get_module_name(filename):
             parts = ["bootstrap", parts[0].replace("<frozen ", "").replace(">", "")]
         else:
             parts = [parts[0], parts[0]]
-    return "%s %s" % (parts[-2], parts[-1].replace(".py", ""))
+    group = parts[-2].replace(".py", "")
+    module = parts[-1].replace(".py", "")
+    if group == "pynsights":
+        raise SkipCall("skip pynsights calls")
+    return "%s %s" % (group, module)
 
 def extract_call(frame):
     source = get_module(frame)
     target = get_module(frame.f_back)
     if source == target:
-        raise AttributeError("ignore self calls")
+        raise SkipCall("ignore self calls")
     return source, target
 
 def flush():
@@ -92,9 +99,10 @@ def process_call(frame, event, _):
             if now - last_flush > FLUSH_INTERVAL:
                 flush()
                 last_flush = now
-
     except AttributeError:
         pass # happens for bootstrap calls only
+    except SkipCall:
+        pass # not an interesting call
     except:
         import traceback
         traceback.print_exc()

@@ -29,6 +29,16 @@ def read_dump():
         for line in fp.readlines():
             handle_line(line)
 
+lastCall = None
+lastCallCount = 0
+
+def addCall(when, callsite):
+    global lastCall, lastCallCount
+    if lastCall != (when, callsite):
+        if lastCall:
+            calls.append((when, callsite, lastCallCount))
+    lastCall = (when, callsite)
+    lastCallCount += 1
 
 def handle_line(line):
     global duration
@@ -42,7 +52,7 @@ def handle_line(line):
         callsites.append(callsite)
     elif kind == EVENT_CALL:
         when, callsite = int(items[1]), int(items[2])
-        calls.append((when, callsite))
+        addCall(when, callsite)
         duration = when
     elif kind == EVENT_ANNOTATE:
         when, message = int(items[1]), " ".join(items[2:])
