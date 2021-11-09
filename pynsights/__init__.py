@@ -56,12 +56,12 @@ def get_callsite(source, target):
 def get_module_name(filename):
     parts = re.split(PATHSEP, filename)
     if len(parts) == 1:
-        basename = parts[0].replace(".py", "")
+        basename = parts[0]
         if basename.startswith("<frozen "):
             parts = ["bootstrap", parts[0].replace("<frozen ", "").replace(">", "")]
         else:
             parts = [parts[0], parts[0]]
-    return "%s %s" % (parts[-2], parts[-1])
+    return "%s %s" % (parts[-2], parts[-1].replace(".py", ""))
 
 def extract_call(frame):
     source = get_module(frame)
@@ -138,7 +138,7 @@ def trace(func):
 
     @functools.wraps(func)
     def tracefunc_closure(*args, **kwargs):
-        method = "%s %s(args=%s, kwargs=%s)" % (func.__module__, func, args, kwargs)
+        method = "%s.%s" % (func.__module__, func.__name__)
         annotate_enter(method)
         result = func(*args, **kwargs)
         annotate_exit(method)
