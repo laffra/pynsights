@@ -57,10 +57,12 @@
             margin-right: 21px;
         }
         #timelinetime {
+            z-index: 1001;
             position: absolute;
             top: 102px;
             display: block;
-            color: white;
+            color: orange;
+            background-color: black;
         }
         #timeline {
             position: absolute;
@@ -107,7 +109,6 @@
         }
         #timelineplay {
             display: inline-block;
-            z-index: 1000;
             color: white;
             margin-right: 4px;
             text-decoration: underline;
@@ -222,6 +223,7 @@ document.title = "Pynsights";
 
 $('#timemax').text((duration / 1000).toFixed(1) + "s");
 $('#timeline').click((event) => {
+    stopPlaying();
     const x = event.pageX - $("#timeline").position().left - 24;
     const gotoWhen = x * duration / ($("#timeline").width() - 24);
     var index = 0;
@@ -229,8 +231,10 @@ $('#timeline').click((event) => {
         // linear search, consider binary search for large recordings...
         const [when, callsite, count] = call;
         if (when > gotoWhen) {
-            playIndex = Math.round(Math.min(calls.length - 1, index));
-            updateTimeline(calls[playIndex-1]);
+            setTimeout(function() {
+                playIndex = Math.round(Math.min(calls.length - 1, index));
+                updateTimeline(calls[playIndex-1]);
+            }, 100);
             return;
         }
         index++;
@@ -526,7 +530,7 @@ function addToGraph(call) {
     addLink(when, source, target);
 }
 
-function findSectionEnd(n) {
+function findChunkEnd(n) {
     const start = getWhen(n);
     while (n < calls.length && getWhen(n) - start < PLAY_SECTION_DURATION) {
         n++;
@@ -544,32 +548,28 @@ function initTimeline() {
 }
 
 function playCalls() {
-    if (playIndex == calls.length) {
-        playIndex = 0;
-        updateTimeline(calls[0]);
-    }
     const clockStart = getTimeMillis();
     const whenStart = getWhen(playIndex);
-    function playSection() {
-        const sectionEnd = findSectionEnd(playIndex);
-        while (isPlaying() && playIndex < sectionEnd) {
+    function playChunk() {
+        const chunkEnd = findChunkEnd(playIndex);
+        while (isPlaying() && playIndex < chunkEnd) {
             addToGraph(calls[playIndex++]);
         }
         updateGraph();
         if (playIndex >= calls.length) {
             stopPlaying();
+            playIndex = 0;
         } 
         else {
-            updateTimeline(calls[playIndex]);
             const clockNow = getTimeMillis();
             const whenNow = getWhen(playIndex);
             const clockDuration = clockNow - clockStart;
             const whenDuration = whenNow - whenStart;
-            console.log("play", Math.max(1, whenDuration - clockDuration),clockDuration, whenDuration, whenNow)
-            setTimeout(playSection, Math.max(1, whenDuration - clockDuration));
+            setTimeout(playChunk, Math.max(1, whenDuration - clockDuration));
         }
+        updateTimeline(calls[playIndex]);
     }
-    setTimeout(playSection, 1);
+    setTimeout(playChunk, 1);
 }
 
 function isPlaying() {

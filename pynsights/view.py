@@ -32,10 +32,13 @@ def read_dump():
         one_percent = round(len(lines) / 100)
         for n, line in enumerate(lines):
             handle_line(line)
-            if n % one_percent == 0:
+            if not one_percent or n % one_percent == 0:
                 if done % 10 == 0:
                     print("%d%% done" % done)
                 done += 1
+        for callsite in lastCall:
+            lastWhen, count = lastCall[callsite]
+            calls.append((lastWhen, callsite, count))
 
 lastCall = {}
 

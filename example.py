@@ -25,9 +25,10 @@ import time
 
 @pynsights.trace
 def run():
-    for n in range(1, 101):
-        time.sleep(0.01)
+    for n in range(1, 11):
+        time.sleep(1.0)
         pynsights.annotate("helloworld - %d" % n)
+        print(10 - n)
         helloworld()  
 
 
