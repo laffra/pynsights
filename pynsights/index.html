@@ -64,9 +64,9 @@
         }
         #timeline {
             position: absolute;
-            top: 12px;
+            top: 40px;
             left: 0;
-            width: 400px;
+            width: calc(100% - 24px);
             height: 100px;
             margin-left: 12px;
             margin-right: 12px;
@@ -86,8 +86,8 @@
             z-index: 1000;
             top: -20px;
             left: 0;
-            width: 1px;
-            border: 2px solid white;
+            width: 0px;
+            border: 1px solid orange;
             height: 0;
         }
         #timelinehover {
@@ -96,7 +96,7 @@
             top: -20px;
             left: 20px;
             padding: 4px;
-            background-color: white;
+            color: orange;
             border-width: 0;
         }
         .timelinemarker {
@@ -106,9 +106,7 @@
             border-radius: 3px;
         }
         #timelineplay {
-            position: absolute;
-            right: 0;
-            top: 0;
+            display: inline-block;
             color: white;
             margin-right: 4px;
             text-decoration: underline;
@@ -119,8 +117,16 @@
             width: 6px;
             height: 6px;
             border-radius: 3px;
-            background-color: white;
+            background-color: lightgrey;
             border: 2px solid red;
+        }
+        .timelineannotationline {
+            position: absolute;
+            top: 0;
+            width: 5px;
+            height: 100%;
+            border: 0px solid lightyellow;
+            border-left-width: 1px;
         }
         .timelinemarker:hover {
             position: absolute;
@@ -139,10 +145,10 @@
         <div id="timeline">
             <div id="timelinehandle"></div>
             <div id="timelinetime">0</div>
-            <div id="timelineplay">stop</div>
         </div>
         <div id="timemax">0</div>
         <div class="controls">
+            <div id="timelineplay">⏸</div>
             <input type="checkbox" id="bloom"></input>
             <label for="bloom">Bloom</label>
             <input type="checkbox" id="toplevel"></input>
@@ -176,6 +182,7 @@ var newLinks = {}
 var liveLinks = {}
 var graphData = Graph.graphData();
 var playIndex = 0;
+var timelineMarkerCount = 0;
 
 const modulenames = /*MODULENAMES*/ [];
 const callsites = /*CALLSITES*/ [];
@@ -183,7 +190,20 @@ const calls = /*CALLS*/ [];
 const annotations = /*ANNOTATIONS*/ [];
 const duration = /*DURATION*/ 0;
 
-var PLAY_SECTION_DURATION = 100
+const colors = [];
+const colorValues = [ 52, 192, 256 ];
+for (const r of colorValues) {
+    for (const g of colorValues) {
+        for (const b of colorValues) {
+            colors.push("rgb(" + r + "," + g + "," + b + ")" );
+        }
+    }
+}
+function getColor(group) {
+    return colors[group.hashCode() % colors.length];
+}
+
+var PLAY_SECTION_DURATION = Math.max(100, calls.length / 1000);
 
 $(window).resize(() => location.reload());
 
@@ -205,7 +225,6 @@ $('#timeline').click((event) => {
         }
         index++;
     }
-    console.log("did not find when", gotoWhen);
 });
 $('#timelineplay').click((event) => {
     if (!isPlaying()) {
@@ -225,30 +244,37 @@ String.prototype.hashCode = function() {
     return hash + 2147483647 + 1;
 };
 
+function addCallsToTimeline(index) {
+    if (index >= calls.length) return;
+    const end = Math.min(calls.length, index + 3000);
+    while (index < end) {
+        addCallToTimeline(calls[index++]);
+    }
+    setTimeout(function() { addCallsToTimeline(index); }, 1);
+}
+
 function addCallToTimeline(call) {
     const timeline = $("#timeline");
     const [when, callsiteIndex] = call;
     const x = getX(when);
+    if (timelineMarkerCount > x / 2) return; // too many markers already
+    timelineMarkerCount++;
     const [source, target] = callsites[callsiteIndex];
     const y = getModule(source).hashCode() % 100;
-    var color;
-    try {
-        color = graphData.nodes[source].color;
-    } catch(e) {
-        color = "lightblue";
-    }
+    var color = getColor(getGroup(source));
     const title = "Call from " + 
         getGroup(source) + "." + getModule(source) + " to " + 
         getGroup(target) + "." + getModule(target);
     $("<div>")
+        .attr("module", settings.toplevel ? getGroup(source) : getModule(source))
         .addClass("timelinemarker")
         .css({
             left: x,
             top: y,
             backgroundColor: color,
         })
-        .hover((event) => {
-            updateTimelineHover(event, title);
+        .hover(function(event) {
+            updateTimelineHover(event, $(this), title);
         })
         .appendTo(timeline);
 }
@@ -264,15 +290,33 @@ function updateTimeline(call) {
     $("#timelinetime")
         .css("left", getX(when))
         .text((when / 1000).toFixed(1) + "s");
-    addCallToTimeline(call);
 }
 
-function annotateTimeline(annotation) {
+function annotateTimeline(index) {
+    if (index >= annotations.length) return;
+    const end = Math.min(annotations.length, index + 10);
+    while (index < end) {
+        annotateTimelineMarker(annotations[index++]);
+    }
+    setTimeout(function() { annotateTimeline(index); }, 1);
+}
+
+function annotateTimelineMarker(annotation) {
     const [when, message] = annotation;
     const enterOrExit = message.match(/^Enter |^Exit /);
     const y = enterOrExit ? 80 : 90;
     const border = enterOrExit ? "green" : "red";
     const fill = enterOrExit ? "green" : "white";
+    function hover(event) {
+        updateTimelineHover(event, $(this), message);
+    }
+    $("<div>")
+        .addClass("timelineannotationline")
+        .css({
+            left: getX(when),
+        })
+        .hover(hover)
+        .appendTo(timeline);
     $("<div>")
         .addClass("timelineannotation")
         .css({
@@ -281,24 +325,24 @@ function annotateTimeline(annotation) {
             borderColor: border,
             backgroundColor: fill,
         })
-        .hover(function() {
-            updateTimelineHover(event, message);
-        })
+        .hover(hover)
         .appendTo(timeline);
 }
 
-function updateTimelineHover(event, text) {
+function updateTimelineHover(event, marker, text) {
+    const x = marker.offset().left + marker.width() / 2;
+    const width = $("body").width();
     $("#timelinehover")
         .css({
-            left: event.pageX,
-            top: 140,
+            left: x > width / 2 ? x - $("#timelinehover").width() : x, 
+            top: 170,
         })
         .text(text);
     $("#timelinehoverconnector")
         .css({
-            left: event.pageX,
+            left: x,
             top: event.pageY,
-            height: 140 - event.pageY,
+            height: 168 - event.pageY,
         });
     event.stopPropagation();
 }
@@ -336,11 +380,10 @@ function createGraph() {
         extraRenderers: [new THREE.CSS2DRenderer()]
     })
     (document.getElementById('3d-graph'))
-        .nodeAutoColorBy('group')
         .nodeThreeObject(node => {
             const sprite = new SpriteText(node.id);
             sprite.material.depthWrite = false; // make sprite background transparent
-            sprite.color = node.color;
+            sprite.color = getColor(node.group);
             sprite.textHeight = 8;
             return sprite;
         })
@@ -350,13 +393,14 @@ function createGraph() {
             node.fz = node.z;
         })
         .linkDirectionalParticleColor(link => link.particleColor)
-        .linkDirectionalParticleSpeed(0.07)
+        .linkDirectionalParticleSpeed(0.03)
         .linkDirectionalParticleWidth(PARTICLE_SIZE)
         .linkThreeObjectExtend(true)
         .linkCurvature(0.1)
+        .linkOpacity(settings.bloom ? 0.1 : 0.3)
         .linkThreeObject(link => {
             const sprite = new SpriteText(settings.counts ? `${link.count}` : "");
-            sprite.color = '#555';
+            sprite.color = '#999';
             sprite.textHeight = 5;
             sprites[link.key] = sprite;
             return sprite;
@@ -409,29 +453,20 @@ function linkKey(source, target) {
     return `${source}>${target}`;
 }
 
-function addNode(node) {
-    if (nodeMap[node.id]) return;
-    node.group = 
-    newNodes[node.id] = node;
-    nodeMap[node.id] = node;
-}
-
-function getDotColor(module) {
-    const node = nodeMap[module.id];
-    return node && node.color || "white";
+function addNode(index) {
+    const module = getModule(index);
+    if (!nodeMap[module]) {
+        newNodes[module] = nodeMap[module] = {
+            id: getModule(index),
+            group: getGroup(index),
+        };
+    }
+    return nodeMap[module];
 }
 
 function addLink(when, sourceIndex, targetIndex) {
-    const source = {
-        id: getModule(sourceIndex),
-        group: getGroup(sourceIndex),
-    };
-    const target = {
-        id: getModule(targetIndex),
-        group: getGroup(targetIndex),
-    };
-    addNode(source);
-    addNode(target);
+    const source = addNode(sourceIndex);
+    const target = addNode(targetIndex);
     const key = linkKey(source.id, target.id);
     var link = linkMap[key];
     if (link === undefined) {
@@ -441,7 +476,8 @@ function addLink(when, sourceIndex, targetIndex) {
             key,
             value: 5,
             count: 0,
-            particleColor: getDotColor(source),
+            color: "white",
+            particleColor: getColor(source.group),
         };
         newLinks[key] = link;
         linkMap[key] = link;
@@ -458,7 +494,6 @@ function shouldRender() {
 function updateLink(event) {
     const { when, link } = event;
     if (settings.dots) {
-        link.particleColor = getDotColor(link.source);
         Graph.emitParticle(link);
     }
     if (settings.counts && sprites[link.key]) {
@@ -491,22 +526,35 @@ function getTimeMillis() {
     return new Date().getTime();
 }
 
-function playAnnotations() {
-    for (const annotation of annotations) {
-        annotateTimeline(annotation);
-    }
+function initTimeline() {
+    annotateTimeline(0);
+    addCallsToTimeline(0);
+}
+
+function clear() {
+    Graph.graphData({ nodes: [], links: [] });
+    for (var key in nodeMap) delete nodeMap[key];
+    for (var key in linkMap) delete linkMap[key];
 }
 
 function playCalls() {
+    if (playIndex == calls.length) {
+        playIndex = 0;
+        updateTimeline(calls[0]);
+        clear();
+    }
     function playSection() {
         const sectionEnd = findSectionEnd(playIndex);
         const start = getTimeMillis();
         while (isPlaying() && playIndex < sectionEnd) {
-            addToGraph(calls[playIndex++])
+            addToGraph(calls[playIndex++]);
         }
         updateGraph();
         updateLinks();
-        updateTimeline(calls[playIndex-1]);
+        updateTimeline(calls[playIndex]);
+        if (playIndex == calls.length) {
+            stopPlaying();
+        }
         const end = getTimeMillis();
         if (isPlaying()) {
             setTimeout(playSection, Math.max(1, PLAY_SECTION_DURATION - (end - start)));
@@ -516,19 +564,19 @@ function playCalls() {
 }
 
 function isPlaying() {
-    return $("#timelineplay").text() == "stop";
+    return $("#timelineplay").text() == "⏸️";
 }
 
 function startPlaying() {
-    $("#timelineplay").text("stop")
-    playAnnotations();
+    $("#timelineplay").text("⏸️")
     playCalls();
 }
 
 function stopPlaying() {
-    $("#timelineplay").text("start")
+    $("#timelineplay").text("▶️")
 }
 
+initTimeline();
 startPlaying();
 
           </script>
