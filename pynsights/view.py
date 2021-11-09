@@ -5,6 +5,7 @@
 import json
 import sys
 import webbrowser
+import collections
 
 EVENT_MODULE = 0
 EVENT_CALLSITE = 1
@@ -25,20 +26,25 @@ index_input_filename = __file__.replace("view.py", "index.html")
 
 
 def read_dump():
+    done = 0
     with open(dump_filename) as fp:
-        for line in fp.readlines():
+        lines = fp.readlines()
+        one_percent = round(len(lines) / 100)
+        for n, line in enumerate(lines):
             handle_line(line)
+            if n % one_percent == 0:
+                if done % 10 == 0:
+                    print("%d%% done" % done)
+                done += 1
 
-lastCall = None
-lastCallCount = 0
+lastCall = {}
 
 def addCall(when, callsite):
-    global lastCall, lastCallCount
-    if lastCall != (when, callsite):
-        if lastCall:
-            calls.append((when, callsite, lastCallCount))
-    lastCall = (when, callsite)
-    lastCallCount += 1
+    if callsite in lastCall:
+        lastWhen, count = lastCall[callsite]
+        if when - lastWhen > 500:
+            calls.append((lastWhen, callsite, count))
+    lastCall[callsite] = when, 1
 
 def handle_line(line):
     global duration
@@ -46,6 +52,8 @@ def handle_line(line):
     kind = int(items[0])
     if kind == EVENT_MODULE:
         _, parent, module = items
+        if module == "__init__":
+            module = parent
         modulenames.append((parent, module))
     elif kind == EVENT_CALLSITE:
         callsite = int(items[1]), int(items[2])

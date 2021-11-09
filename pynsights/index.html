@@ -107,10 +107,12 @@
         }
         #timelineplay {
             display: inline-block;
+            z-index: 1000;
             color: white;
             margin-right: 4px;
             text-decoration: underline;
             cursor: pointer;
+            background-color: black;
         }
         .timelineannotation {
             position: absolute;
@@ -119,6 +121,14 @@
             border-radius: 3px;
             background-color: lightgrey;
             border: 2px solid red;
+        }
+        .timelineannotationtext {
+            position: absolute;
+            top: 130px;
+            color: white;
+            font-size: 12px;
+            font-family: Arial, Helvetica, sans-serif;
+            background-color: black;
         }
         .timelineannotationline {
             position: absolute;
@@ -182,6 +192,7 @@ var newLinks = {}
 var liveLinks = {}
 var graphData = Graph.graphData();
 var playIndex = 0;
+var timelineMarkerCount = 0;
 
 const modulenames = /*MODULENAMES*/ [];
 const callsites = /*CALLSITES*/ [];
@@ -203,7 +214,7 @@ function getColor(group) {
     return colors[group.hashCode() % colors.length];
 }
 
-var PLAY_SECTION_DURATION = Math.max(300, calls.length / 10000);
+var PLAY_SECTION_DURATION = 50;
 
 $(window).resize(() => location.reload());
 
@@ -220,7 +231,6 @@ $('#timeline').click((event) => {
         if (when > gotoWhen) {
             playIndex = Math.round(Math.min(calls.length - 1, index));
             updateTimeline(calls[playIndex-1]);
-            // startPlaying();
             return;
         }
         index++;
@@ -246,11 +256,14 @@ String.prototype.hashCode = function() {
 
 function addCallsToTimeline(index) {
     if (index >= calls.length) return;
-    const end = Math.min(calls.length, index + 5000);
+    const end = Math.min(calls.length, index + 500);
+    var markersToAdd = 21;
     while (index < end) {
-        addCallToTimeline(calls[index]);
+        if (markersToAdd-- > 0) {
+            addCallToTimeline(calls[index]);
+        }
         const lastWhen = calls[index++][0];
-        while (index < end && calls[index][0] < lastWhen + 50) {
+        while (index < end && calls[index][0] < lastWhen + 100) {
             index += 1;
         }
     }
@@ -306,9 +319,7 @@ function annotateTimeline(index) {
 function annotateTimelineMarker(annotation) {
     const [when, message] = annotation;
     const enterOrExit = message.match(/^Enter |^Exit /);
-    const y = enterOrExit ? 80 : 90;
-    const border = enterOrExit ? "green" : "red";
-    const fill = enterOrExit ? "green" : "white";
+    const y = enterOrExit ? 105 : 120;
     function hover(event) {
         updateTimelineHover(event, $(this), message);
     }
@@ -316,18 +327,17 @@ function annotateTimelineMarker(annotation) {
         .addClass("timelineannotationline")
         .css({
             left: getX(when) + 4,
+            height: y + 10,
         })
         .hover(hover)
         .appendTo(timeline);
     $("<div>")
-        .addClass("timelineannotation")
+        .addClass("timelineannotationtext")
         .css({
-            left: getX(when),
+            left: getX(when) + 4,
             top: y,
-            borderColor: border,
-            backgroundColor: fill,
         })
-        .hover(hover)
+        .text(message)
         .appendTo(timeline);
 }
 
@@ -395,11 +405,11 @@ function createGraph() {
             node.fz = node.z;
         })
         .linkDirectionalParticleColor(link => link.particleColor)
-        .linkDirectionalParticleSpeed(0.03)
+        .linkDirectionalParticleSpeed(0.01)
         .linkDirectionalParticleWidth(PARTICLE_SIZE)
         .linkThreeObjectExtend(true)
         .linkCurvature(0.1)
-        .linkOpacity(settings.bloom ? 0.1 : 0.3)
+        .linkOpacity(settings.bloom ? 0.2 : 0.3)
         .linkThreeObject(link => {
             const sprite = new SpriteText(settings.counts ? `${link.count}` : "");
             sprite.color = '#999';
@@ -533,34 +543,30 @@ function initTimeline() {
     addCallsToTimeline(0);
 }
 
-function clear() {
-    Graph.graphData({ nodes: [], links: [] });
-    for (var key in nodeMap) delete nodeMap[key];
-    for (var key in linkMap) delete linkMap[key];
-}
-
 function playCalls() {
     if (playIndex == calls.length) {
         playIndex = 0;
         updateTimeline(calls[0]);
-        clear();
     }
+    const clockStart = getTimeMillis();
+    const whenStart = getWhen(playIndex);
     function playSection() {
         const sectionEnd = findSectionEnd(playIndex);
-        const start = getTimeMillis();
         while (isPlaying() && playIndex < sectionEnd) {
             addToGraph(calls[playIndex++]);
         }
         updateGraph();
-        updateLinks();
-        console.log("play", playIndex, calls.length);
         if (playIndex >= calls.length) {
             stopPlaying();
         } 
-        updateTimeline(calls[playIndex]);
-        const end = getTimeMillis();
-        if (isPlaying()) {
-            setTimeout(playSection, Math.max(1, PLAY_SECTION_DURATION - (end - start)));
+        else {
+            updateTimeline(calls[playIndex]);
+            const clockNow = getTimeMillis();
+            const whenNow = getWhen(playIndex);
+            const clockDuration = clockNow - clockStart;
+            const whenDuration = whenNow - whenStart;
+            console.log("play", Math.max(1, whenDuration - clockDuration),clockDuration, whenDuration, whenNow)
+            setTimeout(playSection, Math.max(1, whenDuration - clockDuration));
         }
     }
     setTimeout(playSection, 1);
@@ -571,14 +577,15 @@ function isPlaying() {
 }
 
 function startPlaying() {
-    $("#timelineplay").text("⏸️")
+    $("#timelineplay").text("⏸️");
     playCalls();
 }
 
 function stopPlaying() {
-    $("#timelineplay").text("▶️")
+    $("#timelineplay").text("▶️");
 }
 
+setInterval(updateLinks, 1000);
 initTimeline();
 startPlaying();
 
