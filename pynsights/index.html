@@ -198,6 +198,7 @@ var timelineMarkerCount = 0;
 const modulenames = /*MODULENAMES*/ [];
 const callsites = /*CALLSITES*/ [];
 const calls = /*CALLS*/ [];
+const cpus = /*CPUS*/ [];
 const annotations = /*ANNOTATIONS*/ [];
 const duration = /*DURATION*/ 0;
 
@@ -218,6 +219,12 @@ function getColor(group) {
 var PLAY_SECTION_DURATION = 50;
 
 $(window).resize(() => location.reload());
+$("#timeline")
+    .prepend($("<canvas>")
+        .attr("id", "timelinecanvas")
+        .attr("width", $("#timeline").width())
+        .attr("height", $("#timeline").height())
+    );
 
 document.title = "Pynsights";
 
@@ -274,6 +281,33 @@ function addCallsToTimeline(index) {
     setTimeout(function() { addCallsToTimeline(index); }, 1);
 }
 
+function drawTimelineChartLine(context, x1, y1, x2, y2, color) {
+    context.beginPath(); 
+    context.strokeStyle = color;
+    context.lineWidth = 4;
+    context.moveTo(x1, y1);
+    context.lineTo(x2, y2);
+    context.stroke();
+    console.log("line", x1, y1, x2, y2)
+}
+
+function addCpusToTimeline() {
+    const canvas = document.getElementById('timelinecanvas');
+    const context = canvas.getContext('2d');
+    const height = $("#timeline").height();
+    var lastX = 0, lastY = height;
+    for (const cpuScore of cpus) {
+        const [when, cpu, systemCpu] = cpuScore;
+        console.log(systemCpu)
+        const x = getX(when);
+        const y = height - 2 - systemCpu * height / 100;
+        drawTimelineChartLine(context, lastX, lastY, x+1, y, "#005000")
+        lastX = x;
+        lastY = y;
+    }
+}
+
+    
 function addCallToTimeline(call) {
     const timeline = $("#timeline");
     const [when, callsiteIndex, count] = call;
@@ -545,6 +579,7 @@ function getTimeMillis() {
 function initTimeline() {
     annotateTimeline(0);
     addCallsToTimeline(0);
+    addCpusToTimeline();
 }
 
 function playCalls() {

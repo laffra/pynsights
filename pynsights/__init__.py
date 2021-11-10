@@ -10,7 +10,9 @@ import re
 import sys
 import threading
 import time
+import psutil
 
+process = psutil.Process(os.getpid())
 caller = inspect.stack()[-1]
 caller_module = caller[1].replace(".py", "")
 
@@ -26,6 +28,10 @@ PATHSEP = re.compile(r"[/\\]")
 start = time.time()
 last_flush = 0
 FLUSH_INTERVAL = 1.0
+CPU_INTERVAL = 0.5
+tracing = False
+cpu_monitor = None
+
 
 EVENT_MODULE = 0
 EVENT_CALLSITE = 1
@@ -33,9 +39,17 @@ EVENT_CALL = 2
 EVENT_ANNOTATE = 3
 EVENT_ENTER = 4
 EVENT_EXIT = 5
+EVENT_CPU = 6
+
+
+def getcpu():
+    cpu_count = psutil.cpu_count()
+    return process.cpu_percent() / cpu_count, psutil.cpu_percent()
+
 
 class SkipCall(Exception):
     pass
+
 
 def get_module(frame):
     filename = frame.f_code.co_filename
@@ -109,16 +123,38 @@ def process_call(frame, event, _):
     finally:
         return process_call
 
+def measure_cpu():
+        my_cpu, system_cpu = getcpu()
+        when = round((time.time() - start) * 1000)
+        record("%s %s %.1f %.1f\n" % (EVENT_CPU, when, my_cpu, system_cpu))
+        time.sleep(CPU_INTERVAL)
+
+
+def monitor_cpu():
+    while tracing:
+        measure_cpu()
+
+
+def start_cpu_monitor():
+    global cpu_monitor
+    if not cpu_monitor:
+        cpu_monitor = threading.Thread(target=monitor_cpu)
+    cpu_monitor.start()
+
+
 def start_tracing():
-    global output
+    global output, tracing
+    tracing = True
     output = open(output_filename, "w")
     print("Pynsights: tracing started. See", output_filename)
     threading.setprofile(process_call)
     sys.setprofile(process_call)
+    start_cpu_monitor()
 
 
 def stop_tracing():
-    global output
+    global output, tracing
+    tracing = False
     threading.setprofile(None)
     sys.setprofile(None)
     if buffer and output:

@@ -13,10 +13,12 @@ EVENT_CALL = 2
 EVENT_ANNOTATE = 3
 EVENT_ENTER = 4
 EVENT_EXIT = 5
+EVENT_CPU = 6
 
 modulenames = []
 callsites = []
 calls = []
+cpus = []
 annotations = []
 duration = 0
 
@@ -58,6 +60,9 @@ def handle_line(line):
         if module == "__init__":
             module = parent
         modulenames.append((parent, module))
+    elif kind == EVENT_CPU:
+        when, cpu, cpu_system = int(items[1]), float(items[2]), float(items[3])
+        cpus.append((when, cpu, cpu_system))
     elif kind == EVENT_CALLSITE:
         callsite = int(items[1]), int(items[2])
         callsites.append(callsite)
@@ -86,6 +91,7 @@ def open_ui():
             .replace("/*MODULENAMES*/", json.dumps(modulenames, indent=4) + " //") \
             .replace("/*CALLSITES*/", json.dumps(callsites) + " //") \
             .replace("/*CALLS*/", json.dumps(calls) + " //") \
+            .replace("/*CPUS*/", json.dumps(cpus, indent=4) + " //") \
             .replace("/*ANNOTATIONS*/", json.dumps(annotations, indent=4) + " //")
         with open(index_output_filename, "w") as fout:
             fout.write(html)
