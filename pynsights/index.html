@@ -221,6 +221,7 @@ var PLAY_SECTION_DURATION = 50;
 $(window).resize(() => location.reload());
 $("#timeline")
     .prepend($("<canvas>")
+        .css("position", "absolute")
         .attr("id", "timelinecanvas")
         .attr("width", $("#timeline").width())
         .attr("height", $("#timeline").height())
