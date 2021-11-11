@@ -21,6 +21,7 @@ calls = []
 cpus = []
 annotations = []
 duration = 0
+lastCall = {}
 
 dump_filename = None
 index_output_filename = None
@@ -38,18 +39,21 @@ def read_dump():
                 if done % 10 == 0:
                     print("%d%% done" % done)
                 done += 1
-        for callsite in lastCall:
-            lastWhen, count = lastCall[callsite]
-            calls.append((lastWhen, callsite, count))
+        flushCallSites()
 
-lastCall = {}
+def flushCallSites():
+    for callsite in lastCall:
+        when, count = lastCall[callsite]
+        calls.append((when, callsite, count))
+    lastCall.clear()
 
 def addCall(when, callsite):
+    count = 0
     if callsite in lastCall:
         lastWhen, count = lastCall[callsite]
         if when - lastWhen > 500:
             calls.append((lastWhen, callsite, count))
-    lastCall[callsite] = when, 1
+    lastCall[callsite] = when, count + 1
 
 def handle_line(line):
     global duration
@@ -74,14 +78,17 @@ def handle_line(line):
         when, message = int(items[1]), " ".join(items[2:])
         annotations.append((when, message))
         duration = when
+        flushCallSites()
     elif kind == EVENT_ENTER:
         when, message = int(items[1]), " ".join(items[2:])
         annotations.append((when, "Enter %s" % message))
         duration = when
+        flushCallSites()
     elif kind == EVENT_EXIT:
         when, message = int(items[1]), " ".join(items[2:])
         annotations.append((when, "Exit %s" % message))
         duration = when
+        flushCallSites()
 
 
 def open_ui():

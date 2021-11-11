@@ -80,13 +80,13 @@ def get_module_name(filename):
             parts = [parts[0], parts[0]]
     group = parts[-2].replace(".py", "")
     module = parts[-1].replace(".py", "")
-    if group == "pynsights":
+    if group == "pynsights" and module == "__init__":
         raise SkipCall("skip pynsights calls")
     return "%s %s" % (group, module)
 
 def extract_call(frame):
-    source = get_module(frame)
-    target = get_module(frame.f_back)
+    target = get_module(frame)
+    source = get_module(frame.f_back)
     if source == target:
         raise SkipCall("ignore self calls")
     return source, target
@@ -123,6 +123,7 @@ def process_call(frame, event, _):
     finally:
         return process_call
 
+
 def measure_cpu():
         my_cpu, system_cpu = getcpu()
         when = round((time.time() - start) * 1000)
@@ -147,9 +148,9 @@ def start_tracing():
     tracing = True
     output = open(output_filename, "w")
     print("Pynsights: tracing started. See", output_filename)
+    start_cpu_monitor()
     threading.setprofile(process_call)
     sys.setprofile(process_call)
-    start_cpu_monitor()
 
 
 def stop_tracing():
