@@ -124,7 +124,8 @@ def measure_cpu(when):
 
 
 def measure_memory(when):
-    memory = psutil.virtual_memory().used
+    process = psutil.Process(os.getpid())
+    memory = process.memory_info().rss
     record("%s %s %.1f\n" % (EVENT_MEMORY, when, memory))
 
 
