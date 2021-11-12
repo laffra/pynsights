@@ -17,11 +17,11 @@
             background-color: rgba(0,0,0,0.5);
             user-select: none;
         }
-        .info {
-            position: absolute;
-            top: 10px;
-            left: 10px;
-            color: white;
+        #focus {
+            width: 300px;
+        }
+        input {
+            background-color: lightgray;
         }
         .log {
             position: absolute;
@@ -202,14 +202,18 @@ var liveLinks = {}
 var graphData = Graph.graphData();
 var playIndex = 0;
 var timelineMarkerCount = 0;
+var paused = false;
 
 const modulenames = /*MODULENAMES*/ [];
 const callsites = /*CALLSITES*/ [];
 const calls = /*CALLS*/ [];
 const cpus = /*CPUS*/ [];
+const memories = /*MEMORIES*/ [];
 const annotations = /*ANNOTATIONS*/ [];
 const duration = /*DURATION*/ 0;
 
+const memoryScores = {};
+const cpuScores = {};
 const colors = [];
 const colorValues = [ 52, 192, 256 ];
 for (const r of colorValues) {
@@ -237,10 +241,15 @@ $("#timeline")
 
 document.title = "Pynsights";
 
+function getXWhen(event) {
+    const x = event.pageX - $("#timeline").position().left - 24;
+    const when = x * duration / ($("#timeline").width() - 24);
+    return [x, when];
+}
+
 function timelineClick(event) {
     stopPlaying();
-    const x = event.pageX - $("#timeline").position().left - 24;
-    const gotoWhen = x * duration / ($("#timeline").width() - 24);
+    const [x, gotoWhen] = getXWhen(event);
     playIndex = 0;
     while (playIndex < calls.length) {
         // linear search, consider binary search for large recordings...
@@ -293,24 +302,48 @@ function addCallsToTimeline(index) {
 function drawTimelineChartLine(context, x1, y1, x2, y2, color) {
     context.beginPath(); 
     context.strokeStyle = color;
-    context.lineWidth = 4;
+    context.lineWidth = 2;
     context.moveTo(x1, y1);
     context.lineTo(x2, y2);
     context.stroke();
 }
 
-function addCpusToTimeline() {
+function addCpuScoresToTimeline() {
     const canvas = document.getElementById('timelinecanvas');
     const context = canvas.getContext('2d');
     const height = $("#timeline").height();
-    var lastX = 0, lastY = height;
+    var lastX = 0, lastY1 = height, lastY2 = height;
     for (const cpuScore of cpus) {
         const [when, cpu, systemCpu] = cpuScore;
         const x = getX(when);
-        const y = height - 2 - systemCpu * height / 100;
-        drawTimelineChartLine(context, lastX, lastY, x+1, y, "#005000")
+        const y1 = height - 2 - cpu * height / 100;
+        const y2 = height - 2 - systemCpu * height / 100;
+        drawTimelineChartLine(context, lastX, lastY1, x+1, y1, "pink")
+        drawTimelineChartLine(context, lastX, lastY2, x+1, y2, "darkgreen")
+        lastX = x;
+        lastY1 = y1;
+        lastY2 = y2;
+        cpuScores[x] = [cpu, systemCpu];
+    }
+}
+
+function addMemoryScoresToTimeline() {
+    const canvas = document.getElementById('timelinecanvas');
+    const context = canvas.getContext('2d');
+    const height = $("#timeline").height();
+    var lastX = 0, lastY = height, maxMemory = 0;
+    for (const memoryScore of memories) {
+        const [when, memory] = memoryScore;
+        maxMemory = Math.max(maxMemory, memory);
+    }
+    for (const memoryScore of memories) {
+        const [when, memory] = memoryScore;
+        const x = getX(when);
+        const y = height - 2 - memory * (height - 20) / maxMemory;
+        drawTimelineChartLine(context, lastX, lastY, x+1, y, "lightblue")
         lastX = x;
         lastY = y;
+        memoryScores[x] = memory
     }
 }
 
@@ -319,14 +352,15 @@ function addCallToTimeline(call) {
     const timeline = $("#timeline");
     const [when, callsiteIndex, count] = call;
     const x = getX(when);
-    const [source, target] = callsites[callsiteIndex];
-    const y = getModuleName(source).hashCode() % 100;
-    var color = getColor(getGroupName(source));
+    const [sourceIndex, targetIndex] = callsites[callsiteIndex];
+    if (!inFocus(sourceIndex) || !inFocus(targetIndex)) return;
+    const y = getModuleName(sourceIndex).hashCode() % 100;
+    var color = getColor(getGroupName(sourceIndex));
     const title = "Call from " + 
-        getGroupName(source) + "." + getModuleName(source) + " to " + 
-        getGroupName(target) + "." + getModuleName(target);
+        getGroupName(sourceIndex) + "." + getModuleName(sourceIndex) + " to " + 
+        getGroupName(targetIndex) + "." + getModuleName(targetIndex);
     $("<div>")
-        .attr("module", settings.toplevel ? getGroupName(source) : getModuleName(source))
+        .attr("module", settings.toplevel ? getGroupName(sourceIndex) : getModuleName(sourceIndex))
         .addClass("timelinemarker")
         .css({
             left: x,
@@ -383,8 +417,37 @@ function annotateTimelineMarker(annotation) {
         .appendTo(timeline);
 }
 
+const KB = 1024;
+const MB = 1024 * KB;
+const GB = 1024 * MB;
+const TB = 1024 * GB;
+const MEMORY_SIZE = { "TB": TB, "GB": GB, "MB": MB, "KB": KB }
+
+function toGB(bytes) {
+    for (const size in MEMORY_SIZE) {
+        if (bytes > MEMORY_SIZE[size]) {
+            return `${(bytes / MEMORY_SIZE[size]).toFixed(1)}${size}`;
+        }
+    }
+    return `${bytes} bytes`;
+}
+
+$("#timelinecanvas")
+    .on("mousemove", event => {
+        const [x, when] = getXWhen(event);
+        var index = x;
+        while (index>0 && !memoryScores[index]) index--;
+        const memory = toGB(memoryScores[index]);
+        const [cpu, systemCpu] = cpuScores[index];
+        showHover(x + 20, 0, `cpu:${cpu}%   system:${systemCpu}%   memory:${memory}`);
+    });
+
 function updateTimelineHover(event, marker, text) {
     const x = marker.offset().left + marker.width() / 2;
+    showHover(x, event.pageY, text);
+}
+
+function showHover(x, y, text) {
     const width = $("body").width();
     $("#timelinehover")
         .css({
@@ -395,8 +458,8 @@ function updateTimelineHover(event, marker, text) {
     $("#timelinehoverconnector")
         .css({
             left: x,
-            top: event.pageY,
-            height: 168 - event.pageY,
+            top: y,
+            height: 168 - y,
         });
     event.stopPropagation();
 }
@@ -542,7 +605,7 @@ function addNode(index) {
 }
 
 function addLink(when, sourceIndex, targetIndex) {
-    if (!inFocus(sourceIndex) && !inFocus(targetIndex)) return;
+    if (!inFocus(sourceIndex) || !inFocus(targetIndex)) return;
     const source = addNode(sourceIndex);
     const target = addNode(targetIndex);
     const key = linkKey(source.id, target.id);
@@ -607,7 +670,22 @@ function getTimeMillis() {
 function initTimeline() {
     annotateTimeline(0);
     addCallsToTimeline(0);
-    addCpusToTimeline();
+    addCpuScoresToTimeline();
+    addMemoryScoresToTimeline();
+}
+
+function checkHidden() {
+    if (document.hidden) {
+        document.title = "Pynsights (paused)";
+        stopPlaying();
+        paused = true;
+    } else {
+        if (paused) {
+            document.title = "Pynsights";
+            startPlaying();
+            paused = false;
+        }
+    }
 }
 
 function playCalls() {
@@ -649,9 +727,11 @@ function startPlaying() {
 
 function stopPlaying() {
     $("#timelineplay").text("start");
+    paused = false;
 }
 
 setInterval(updateLinks, 1000);
+setInterval(checkHidden, 1000);
 initTimeline();
 startPlaying();
 
