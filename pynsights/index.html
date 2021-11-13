@@ -59,7 +59,7 @@
         #timelinetime {
             z-index: 1001;
             position: absolute;
-            top: 102px;
+            top: 142px;
             display: block;
             color: orange;
             background-color: black;
@@ -80,7 +80,7 @@
             top: 0;
             left: 0;
             width: 2px;
-            height: 100px;
+            height: 140px;
             background-color: red;
         }
         #timelinehoverconnector {
@@ -325,18 +325,19 @@ function drawTimelineChartLine(context, x1, y1, x2, y2, color) {
     context.stroke();
 }
 
-function drawGCMarker(context, x1, x2, y, color) {
+function drawGCMarker(context, x, y, duration, color) {
     context.beginPath(); 
     context.strokeStyle = color;
-    context.lineWidth = 4;
-    context.rect(x1, y - 5, x2 - x1, 10);
+    context.lineWidth = 2;
+    const radius = getX(duration) - getX(0) + 3;
+    console.log("gc", duration, radius)
+    context.arc(x, y, radius, 0, 2 * Math.PI)
     context.stroke();
 }
 
 function drawHeapMarker(context, x, y, color) {
     context.beginPath(); 
     context.strokeStyle = color;
-    context.arc(x-1, y-1, 3, 0, 2 * Math.PI)
     context.stroke();
 }
 
@@ -387,11 +388,7 @@ function addMemoryScoresToTimeline() {
         drawTimelineChartLine(context, lastX, lastY, x+1, y, "lightblue");
         if (gcLocations[x]) {
             const [gcDuration, collected, uncollectable] = gcLocations[x];
-            const startX = getX(when - gcDuration) - 5;
-            drawGCMarker(context, startX, x, y, "orange");
-        }
-        if (heapScoreLocations[x]) {
-            drawHeapMarker(context, x+1, y, "red");
+            drawGCMarker(context, x, y, gcDuration, "orange");
         }
         lastX = x;
         lastY = y;
@@ -516,6 +513,15 @@ function findClosest(scores, x, defaultValue) {
 }
 
 
+var hoverHider = setTimeout(() => {}, 1);
+function hideHover() {
+    clearTimeout(hoverHider);
+    hoverHider = setTimeout(() => {
+        $("#timelinehover,#timelinehoverconnector,#timelinehoverheap")
+            .css("top", -10000);
+    }, 10000)
+}
+
 $("#timelinecanvas")
     .on("mousemove", event => {
         const [x, when] = getXWhen(event);
@@ -529,6 +535,7 @@ $("#timelinecanvas")
             `memory:${memory}`);
         const snapshot = findClosest(heapScores, x, []);
         showHeap(x + 20, snapshot);
+        hideHover();
     });
 
 function updateTimelineHover(event, marker, text) {
@@ -542,13 +549,13 @@ function showHover(x, y, text) {
         .text(text)
         .css({
             left: x > width / 2 ? x - $("#timelinehover").width() : x, 
-            top: 170,
+            top: 180,
         });
     $("#timelinehoverconnector")
         .css({
             left: x,
-            top: y,
-            height: 168 - y,
+            top: y + $("#timeline").offset().top,
+            height: 138 - y,
         });
 }
 
@@ -559,7 +566,7 @@ function showHeap(x, snapshot) {
         .append(table)
         .css({
             left: $("#timelinehover").css("left"),
-            top: 190,
+            top: 200,
         });
     for (const measure of snapshot) {
         const [index, count, size] = measure;
@@ -787,7 +794,7 @@ function initTimeline() {
 
 function checkHidden() {
     if (document.hidden) {
-        document.title = "Pynsights (paused)";
+        document.title = "X-Pynsights";
         stopPlaying();
         paused = true;
     } else {

@@ -42,6 +42,7 @@ heap_timer = 1
 tracing = False
 metrics_monitor = None
 gc_start = 0
+last_line = ""
 
 
 
@@ -117,7 +118,10 @@ def flush():
 
 
 def record(line):
-    buffer.append(line)
+    global last_line
+    if line != last_line:
+        buffer.append(line)
+    last_line = line
 
 
 def process_call(frame, event, _):
