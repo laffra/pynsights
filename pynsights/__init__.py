@@ -165,7 +165,7 @@ def record_heap(when):
     global last_heap_snapshot
     heap_snapshot = summary.summarize(muppy.get_objects())
     if last_heap_snapshot:
-        top20 = sorted(heap_snapshot, key = lambda count: count[2])[-10:]
+        top20 = sorted(heap_snapshot, key = lambda count: count[2])[-20:]
         dump = [
             [ get_type_index(typename), count, size ]
             for typename, count, size in top20
