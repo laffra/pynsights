@@ -13,6 +13,7 @@ callsites = []
 calls = []
 cpus = []
 heap = []
+gcs = []
 memories = []
 annotations = []
 duration = 0
@@ -71,6 +72,9 @@ def handle_line(line):
     elif kind == EVENT_HEAP:
         when, counts = int(items[1]), json.loads(" ".join(items[2:]))
         heap.append((when, counts))
+    elif kind == EVENT_GC:
+        when, gc_duration, collected, uncollectable = int(items[1]), int(items[2]), int(items[3]), int(items[4])
+        gcs.append((when, gc_duration, collected, uncollectable))
     elif kind == EVENT_CALLSITE:
         callsite = int(items[1]), int(items[2])
         callsites.append(callsite)
@@ -105,6 +109,7 @@ def open_ui():
             .replace("/*CPUS*/", json.dumps(cpus) + " //") \
             .replace("/*ANNOTATIONS*/", json.dumps(annotations) + " //") \
             .replace("/*HEAP*/", "[\n    " + ",\n    ".join(json.dumps(snapshot) for snapshot in heap) + "\n] //") \
+            .replace("/*GC*/", "[\n    " + ",\n    ".join(json.dumps(gc) for gc in gcs) + "\n] //") \
             .replace("/*TYPES*/", json.dumps(typenames) + " //") \
             .replace("/*MEMORIES*/", json.dumps(memories, indent=4) + " //")
         with open(index_output_filename, "w") as fout:

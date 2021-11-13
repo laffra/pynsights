@@ -101,7 +101,17 @@
             color: orange;
             border-width: 0;
         }
-        #timelinehoverheap {
+        table {
+            border-collapse: collapse; 
+        }
+        #timelinehoverheap tr {
+            border: 0 solid white;
+        }
+        #timelinehoverheap tr:first-child {
+            border-bottom-width: 1px;
+        }
+        #timelinehoverheap td {
+            padding-right: 8px;
             color: white;
         }
         .timelinemarker {
@@ -214,8 +224,9 @@ const cpus = /*CPUS*/ [];
 const memories = /*MEMORIES*/ [];
 const types = /*TYPES*/ [];
 const heap = /*HEAP*/ [];
+const gcs = /*GC*/ [];
 const annotations = /*ANNOTATIONS*/ [];
-const duration = /*DURATION*/ 0;
+const programDuration = /*DURATION*/ 0;
 
 const memoryScores = {};
 const cpuScores = {};
@@ -249,7 +260,7 @@ document.title = "Pynsights";
 
 function getXWhen(event) {
     const x = event.pageX - $("#timeline").position().left - 24;
-    const when = x * duration / ($("#timeline").width() - 24);
+    const when = x * programDuration / ($("#timeline").width() - 24);
     return [x, when];
 }
 
@@ -266,7 +277,7 @@ function timelineClick(event) {
         playIndex++;
     }
 }
-$('#timemax').text((duration / 1000).toFixed(1) + "s");
+$('#timemax').text((programDuration / 1000).toFixed(1) + "s");
 $('#timeline').click((event) => {
     stopPlaying();
     setTimeout(function () { timelineClick(event); }, 1)
@@ -314,6 +325,21 @@ function drawTimelineChartLine(context, x1, y1, x2, y2, color) {
     context.stroke();
 }
 
+function drawGCMarker(context, x1, x2, y, color) {
+    context.beginPath(); 
+    context.strokeStyle = color;
+    context.lineWidth = 4;
+    context.rect(x1, y - 5, x2 - x1, 10);
+    context.stroke();
+}
+
+function drawHeapMarker(context, x, y, color) {
+    context.beginPath(); 
+    context.strokeStyle = color;
+    context.arc(x-1, y-1, 3, 0, 2 * Math.PI)
+    context.stroke();
+}
+
 function addCpuScoresToTimeline() {
     const canvas = document.getElementById('timelinecanvas');
     const context = canvas.getContext('2d');
@@ -342,11 +368,31 @@ function addMemoryScoresToTimeline() {
         const [when, memory] = memoryScore;
         maxMemory = Math.max(maxMemory, memory);
     }
+    const heapScoreLocations = {};
+    for (const snapshot of heap) {
+        const [when, counts] = snapshot;
+        const x = getX(when);
+        heapScoreLocations[x] = snapshot;
+    }
+    const gcLocations = {};
+    for (const gc of gcs) {
+        const [when, gcDuration, collected, uncollectable] = gc;
+        const x = getX(when);
+        gcLocations[x] = [gcDuration, collected, uncollectable];
+    }
     for (const memoryScore of memories) {
         const [when, memory] = memoryScore;
         const x = getX(when);
         const y = height - 2 - memory * (height - 20) / maxMemory;
-        drawTimelineChartLine(context, lastX, lastY, x+1, y, "lightblue")
+        drawTimelineChartLine(context, lastX, lastY, x+1, y, "lightblue");
+        if (gcLocations[x]) {
+            const [gcDuration, collected, uncollectable] = gcLocations[x];
+            const startX = getX(when - gcDuration) - 5;
+            drawGCMarker(context, startX, x, y, "orange");
+        }
+        if (heapScoreLocations[x]) {
+            drawHeapMarker(context, x+1, y, "red");
+        }
         lastX = x;
         lastY = y;
         memoryScores[x] = memory
@@ -357,7 +403,6 @@ function indexHeap() {
     for (const snapshot of heap) {
         const [when, counts] = snapshot;
         const x = getX(when);
-        console.log("add heap score", x, counts)
         heapScores[x] = counts;
     }
 }
@@ -389,7 +434,7 @@ function addCallToTimeline(call) {
 }
 
 function getX(when) {
-    return Math.round(when * ($("#timeline").width() - 24) / duration) + 12;
+    return Math.round(when * ($("#timeline").width() - 24) / programDuration) + 12;
 }
 
 function updateTimeline(call) {
@@ -463,11 +508,11 @@ function toHourMinSec(millis) {
 }
 
 
-function findClosest(scores, x) {
+function findClosest(scores, x, defaultValue) {
     const width = $("body").width();
     for (var n=x; n>0; n--) if (scores[n]) return scores[n];
     for (var n=x; n<width; n++) if (scores[n]) return scores[n];
-    return undefined;
+    return defaultValue;
 }
 
 
@@ -475,14 +520,14 @@ $("#timelinecanvas")
     .on("mousemove", event => {
         const [x, when] = getXWhen(event);
         var index = x;
-        const memory = toGB(findClosest(memoryScores, x));
-        const [cpu, systemCpu] = findClosest(cpuScores, x);
+        const memory = toGB(findClosest(memoryScores, x, 0));
+        const [cpu, systemCpu] = findClosest(cpuScores, x, [0,0]);
         showHover(x + 20, 0,
             `${toHourMinSec(when)}: ` +
             `cpu:${cpu}%   ` +
             `system:${systemCpu}%   ` +
             `memory:${memory}`);
-        const snapshot = findClosest(heapScores, x);
+        const snapshot = findClosest(heapScores, x, []);
         showHeap(x + 20, snapshot);
     });
 
@@ -508,8 +553,10 @@ function showHover(x, y, text) {
 }
 
 function showHeap(x, snapshot) {
+    const table = $("<table>")
     $("#timelinehoverheap")
         .empty()
+        .append(table)
         .css({
             left: $("#timelinehover").css("left"),
             top: 190,
@@ -517,9 +564,13 @@ function showHeap(x, snapshot) {
     for (const measure of snapshot) {
         const [index, count, size] = measure;
         const typename = types[index];
-        $("<div>")
-            .text(`${toGB(size)} ${count} ${typename}`)
-            .prependTo($("#timelinehoverheap"));
+        table.prepend(
+            $("<tr>").append(
+                $("<td>").text(`${toGB(size)}`),
+                $("<td>").text(`${count}`),
+                $("<td>").text(`${typename.replace("#"," ")}`),
+            )
+        )
     }
 }
 

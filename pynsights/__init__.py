@@ -5,6 +5,7 @@ Record inter-module calls and save events in a file
 import atexit
 import inspect
 import functools
+import gc
 import json
 import os
 import re
@@ -40,6 +41,7 @@ last_heap_snapshot = None
 heap_timer = 1
 tracing = False
 metrics_monitor = None
+gc_start = 0
 
 
 
@@ -141,6 +143,16 @@ def process_call(frame, event, _):
         return process_call
 
 
+def measure_gc(phase, info):
+    global gc_start
+    when = round((time.time() - start) * 1000)
+    if phase == "start":
+        gc_start = when
+    elif phase == "stop":
+        duration = when - gc_start
+        record("%s %s %d %d %d\n" % (EVENT_GC, when, duration, info["collected"], info["uncollectable"]))
+
+
 def measure_cpu(when):
     my_cpu, system_cpu = getcpu()
     record("%s %s %.1f %.1f\n" % (EVENT_CPU, when, my_cpu, system_cpu))
@@ -176,7 +188,7 @@ def record_heap(when):
             [ get_type_index(typename), count, size ]
             for typename, count, size in top20
         ] + [
-            [ get_type_index("Total_Heap_Size_and_Count"), totalCount, totalSize ]
+            [ get_type_index("Total#Heap#Size#and#Count"), totalCount, totalSize ]
         ]
         record("%s %s %s\n" % (EVENT_HEAP, when, json.dumps(dump)))
     last_heap_snapshot = heap_snapshot
@@ -206,6 +218,8 @@ def start_tracing():
     start_metrics_monitor()
     threading.setprofile(process_call)
     sys.setprofile(process_call)
+    gc.callbacks.append(measure_gc)
+
 
 
 def flush_counters():
