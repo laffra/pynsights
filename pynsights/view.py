@@ -18,6 +18,7 @@ memories = []
 annotations = []
 duration = 0
 lastCall = {}
+when = 0
 
 dump_filename = None
 index_output_filename = None
@@ -52,7 +53,8 @@ def addCall(when, callsite):
     lastCall[callsite] = when, count + 1
 
 def handle_line(line):
-    global duration
+    print(line)
+    global duration, when
     items = line[:-1].split()
     kind = int(items[0])
     if kind == EVENT_MODULE:
@@ -61,42 +63,44 @@ def handle_line(line):
             module = parent
         modulenames.append((parent, module))
     elif kind == EVENT_CPU:
-        when, cpu, cpu_system = int(items[1]), float(items[2]), float(items[3])
+        cpu, cpu_system = float(items[1]), float(items[2])
         cpus.append((when, cpu, cpu_system))
     elif kind == EVENT_MEMORY:
-        when, memory = int(items[1]), float(items[2])
+        memory = float(items[1])
         memories.append((when, memory))
     elif kind == EVENT_TYPE:
         typename = items[1]
         typenames.append(typename)
     elif kind == EVENT_HEAP:
-        when, counts = int(items[1]), json.loads(" ".join(items[2:]))
+        counts = json.loads(" ".join(items[1:]))
         heap.append((when, counts))
     elif kind == EVENT_GC:
-        when, gc_duration, collected, uncollectable = int(items[1]), int(items[2]), int(items[3]), int(items[4])
+        gc_duration, collected, uncollectable = int(items[1]), int(items[2]), int(items[3])
         gcs.append((when, gc_duration, collected, uncollectable))
     elif kind == EVENT_CALLSITE:
         callsite = int(items[1]), int(items[2])
         callsites.append(callsite)
     elif kind == EVENT_CALL:
-        when, callsite = int(items[1]), int(items[2])
+        callsite = int(items[1])
         addCall(when, callsite)
         duration = when
     elif kind == EVENT_ANNOTATE:
-        when, message = int(items[1]), " ".join(items[2:])
+        message = " ".join(items[1:])
         annotations.append((when, message))
         duration = when
         flushCallSites()
     elif kind == EVENT_ENTER:
-        when, message = int(items[1]), " ".join(items[2:])
+        message = " ".join(items[1:])
         annotations.append((when, "Enter %s" % message))
         duration = when
         flushCallSites()
     elif kind == EVENT_EXIT:
-        when, message = int(items[1]), " ".join(items[2:])
+        message = " ".join(items[1:])
         annotations.append((when, "Exit %s" % message))
         duration = when
         flushCallSites()
+    elif kind == EVENT_TIMESTAMP:
+        when = int(items[1])
 
 
 def open_ui():

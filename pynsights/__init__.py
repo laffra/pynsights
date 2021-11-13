@@ -42,7 +42,7 @@ heap_timer = 1
 tracing = False
 metrics_monitor = None
 gc_start = 0
-last_line = ""
+last_when = 0
 
 
 
@@ -57,7 +57,7 @@ class SkipCall(Exception):
 
 def get_type_index(typename):
     if not typename in type_index:
-        record("%s %s\n" % (
+        record(0, "%s %s\n" % (
             EVENT_TYPE,
             typename
         ))
@@ -68,7 +68,7 @@ def get_type_index(typename):
 def get_module_index(frame):
     filename = frame.f_code.co_filename
     if not filename in filename_index:
-        record("%s %s\n" % (
+        record(0, "%s %s\n" % (
             EVENT_MODULE,
             get_module_name_index(filename)))
         filename_index[filename] = len(filename_index)
@@ -78,7 +78,7 @@ def get_module_index(frame):
 def get_callsite_index(source, target):
     callsite = "%s>%s" % (source, target)
     if not callsite in callsite_index:
-        record("%s %s %s\n" % (
+        record(0, "%s %s %s\n" % (
             EVENT_CALLSITE,
             source,
             target))
@@ -117,11 +117,12 @@ def flush():
     output.flush()
 
 
-def record(line):
-    global last_line
-    if line != last_line:
-        buffer.append(line)
-    last_line = line
+def record(when, line):
+    global last_when
+    if when and when != last_when:
+        buffer.append("%s %s\n" % (EVENT_TIMESTAMP, when))
+    buffer.append(line)
+    last_when = when
 
 
 def process_call(frame, event, _):
@@ -131,7 +132,7 @@ def process_call(frame, event, _):
             source, target = extract_call(frame)
             now = time.time()
             when = round((now - start) * 1000)
-            record("%s %s %s\n" % (EVENT_CALL, when, get_callsite_index(source, target)))
+            record(when, "%s %s\n" % (EVENT_CALL, get_callsite_index(source, target)))
             call_count += 1
             if now - last_flush > FLUSH_INTERVAL:
                 flush()
@@ -154,18 +155,18 @@ def measure_gc(phase, info):
         gc_start = when
     elif phase == "stop":
         duration = when - gc_start
-        record("%s %s %d %d %d\n" % (EVENT_GC, when, duration, info["collected"], info["uncollectable"]))
+        record(when, "%s %d %d %d\n" % (EVENT_GC, duration, info["collected"], info["uncollectable"]))
 
 
 def measure_cpu(when):
     my_cpu, system_cpu = getcpu()
-    record("%s %s %.1f %.1f\n" % (EVENT_CPU, when, my_cpu, system_cpu))
+    record(when, "%s %.1f %.1f\n" % (EVENT_CPU, my_cpu, system_cpu))
 
 
 def measure_memory(when):
     process = psutil.Process(os.getpid())
     memory = process.memory_info().rss
-    record("%s %s %.1f\n" % (EVENT_MEMORY, when, memory))
+    record(when, "%s %.1f\n" % (EVENT_MEMORY, memory))
 
 
 def measure_heap(when, force=False):
@@ -194,7 +195,7 @@ def record_heap(when):
         ] + [
             [ get_type_index("Total#Heap#Size#and#Count"), totalCount, totalSize ]
         ]
-        record("%s %s %s\n" % (EVENT_HEAP, when, json.dumps(dump)))
+        record(when, "%s %s\n" % (EVENT_HEAP, json.dumps(dump)))
     last_heap_snapshot = heap_snapshot
 
 
@@ -248,7 +249,7 @@ def stop_tracing():
 def annotate(message, event=EVENT_ANNOTATE):
     now = time.time()
     when = round((now - start) * 1000)
-    record("%s %s %s\n" % (event, when, message))
+    record(when, "%s %s\n" % (event, message))
 
 
 def annotate_enter(func):
