@@ -163,12 +163,20 @@ def measure_heap(when, force=False):
 
 def record_heap(when):
     global last_heap_snapshot
-    heap_snapshot = summary.summarize(muppy.get_objects())
+    objects = muppy.get_objects()
+    heap_snapshot = summary.summarize(objects)
+    totalSize = 0
+    totalCount = 0
+    for _, count, size in heap_snapshot:
+        totalCount += count
+        totalSize += size
     if last_heap_snapshot:
         top20 = sorted(heap_snapshot, key = lambda count: count[2])[-20:]
         dump = [
             [ get_type_index(typename), count, size ]
             for typename, count, size in top20
+        ] + [
+            [ get_type_index("Total_Heap_Size_and_Count"), totalCount, totalSize ]
         ]
         record("%s %s %s\n" % (EVENT_HEAP, when, json.dumps(dump)))
     last_heap_snapshot = heap_snapshot

@@ -508,11 +508,10 @@ function showHover(x, y, text) {
 }
 
 function showHeap(x, snapshot) {
-    const width = $("body").width();
     $("#timelinehoverheap")
         .empty()
         .css({
-            left: x > width / 2 ? x - $("#timelinehoverheap").width() : x, 
+            left: $("#timelinehover").css("left"),
             top: 190,
         });
     for (const measure of snapshot) {
