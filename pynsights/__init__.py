@@ -5,12 +5,15 @@ Record inter-module calls and save events in a file
 import atexit
 import inspect
 import functools
+import json
 import os
 import re
 import sys
 import threading
 import time
 import psutil
+from pympler import muppy
+from pympler import summary
 
 from .constants import *
 
@@ -22,6 +25,7 @@ output_filename = "%s/pynsights_trace_%s.txt" % (os.path.expanduser('~'), caller
 output = None
 filename_index = {}
 callsite_index = {}
+type_index = {}
 lock = threading.Lock()
 buffer = []
 MAX_BUFFER_SIZE = 1000
@@ -30,7 +34,10 @@ PATHSEP = re.compile(r"[/\\]")
 start = time.time()
 last_flush = 0
 FLUSH_INTERVAL = 1.0
-CPU_INTERVAL = 0.5
+METRICS_INTERVAL = 0.5
+HEAP_TIMER = 20
+last_heap_snapshot = None
+heap_timer = 1
 tracing = False
 metrics_monitor = None
 
@@ -45,16 +52,27 @@ class SkipCall(Exception):
     pass
 
 
-def get_module(frame):
+def get_type_index(typename):
+    if not typename in type_index:
+        record("%s %s\n" % (
+            EVENT_TYPE,
+            typename
+        ))
+        type_index[typename] = len(type_index)
+    return type_index[typename]
+
+
+def get_module_index(frame):
     filename = frame.f_code.co_filename
     if not filename in filename_index:
         record("%s %s\n" % (
             EVENT_MODULE,
-            get_module_name(filename)))
+            get_module_name_index(filename)))
         filename_index[filename] = len(filename_index)
     return filename_index[filename]
 
-def get_callsite(source, target):
+
+def get_callsite_index(source, target):
     callsite = "%s>%s" % (source, target)
     if not callsite in callsite_index:
         record("%s %s %s\n" % (
@@ -64,7 +82,8 @@ def get_callsite(source, target):
         callsite_index[callsite] = len(callsite_index)
     return callsite_index[callsite]
 
-def get_module_name(filename):
+
+def get_module_name_index(filename):
     parts = re.split(PATHSEP, filename)
     if len(parts) == 1:
         basename = parts[0]
@@ -78,12 +97,14 @@ def get_module_name(filename):
         raise SkipCall("skip pynsights calls")
     return "%s %s" % (group, module)
 
+
 def extract_call(frame):
-    target = get_module(frame)
-    source = get_module(frame.f_back)
+    target = get_module_index(frame)
+    source = get_module_index(frame.f_back)
     if source == target:
         raise SkipCall("ignore self calls")
     return source, target
+
 
 def flush():
     global buffer
@@ -92,8 +113,10 @@ def flush():
         output.write(line)
     output.flush()
 
+
 def record(line):
     buffer.append(line)
+
 
 def process_call(frame, event, _):
     global call_count, last_flush
@@ -102,7 +125,7 @@ def process_call(frame, event, _):
             source, target = extract_call(frame)
             now = time.time()
             when = round((now - start) * 1000)
-            record("%s %s %s\n" % (EVENT_CALL, when, get_callsite(source, target)))
+            record("%s %s %s\n" % (EVENT_CALL, when, get_callsite_index(source, target)))
             call_count += 1
             if now - last_flush > FLUSH_INTERVAL:
                 flush()
@@ -129,12 +152,35 @@ def measure_memory(when):
     record("%s %s %.1f\n" % (EVENT_MEMORY, when, memory))
 
 
+def measure_heap(when, force=False):
+    global heap_timer
+    heap_timer -= 1
+    if not force and heap_timer:
+        return
+    heap_timer = HEAP_TIMER
+    record_heap(when)
+
+
+def record_heap(when):
+    global last_heap_snapshot
+    heap_snapshot = summary.summarize(muppy.get_objects())
+    if last_heap_snapshot:
+        top10 = sorted(heap_snapshot, key = lambda count: count[2])[-10:]
+        dump = [
+            [ get_type_index(typename), count, size ]
+            for typename, count, size in top10
+        ]
+        record("%s %s %s\n" % (EVENT_HEAP, when, json.dumps(dump)))
+    last_heap_snapshot = heap_snapshot
+
+
 def generate_metrics():
     while tracing:
         when = round((time.time() - start) * 1000)
         measure_memory(when)
         measure_cpu(when)
-        time.sleep(CPU_INTERVAL)
+        measure_heap(when)
+        time.sleep(METRICS_INTERVAL)
 
 
 def start_metrics_monitor():
@@ -154,11 +200,19 @@ def start_tracing():
     sys.setprofile(process_call)
 
 
+def flush_counters():
+    when = round((time.time() - start) * 1000)
+    measure_cpu(when)
+    measure_memory(when)
+    measure_heap(when, True)
+
+
 def stop_tracing():
     global output, tracing
     tracing = False
     threading.setprofile(None)
     sys.setprofile(None)
+    flush_counters()
     if buffer and output:
         flush()
         print("Pynsights: tracing finished. Traced %d calls. See" % call_count, output_filename)

@@ -6,6 +6,7 @@ from subprocess import check_call
 REQUIRED_PACKAGES = [
     "websocket-client",
     "psutil",
+    "pympler",
 ]
 
 

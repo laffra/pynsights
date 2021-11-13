@@ -92,7 +92,7 @@
             border: 1px solid orange;
             height: 0;
         }
-        #timelinehover {
+        #timelinehover, #timelinehoverheap  {
             position: absolute;
             z-index: 1000;
             top: -20px;
@@ -100,6 +100,9 @@
             padding: 4px;
             color: orange;
             border-width: 0;
+        }
+        #timelinehoverheap {
+            color: white;
         }
         .timelinemarker {
             position: absolute;
@@ -111,7 +114,6 @@
             display: inline-block;
             color: white;
             margin-right: 14px;
-            text-decoration: underline;
             cursor: pointer;
             background-color: black;
             border: 1px solid white;
@@ -154,6 +156,7 @@
         </div>
         <div id="paused" class="paused">Pauzing to save GPU cycles...</div>
         <div id="timelinehover"></div>
+        <div id="timelinehoverheap"></div>
         <div id="timelinehoverconnector"></div>
         <div id="timeline">
             <div id="timelinehandle"></div>
@@ -209,11 +212,14 @@ const callsites = /*CALLSITES*/ [];
 const calls = /*CALLS*/ [];
 const cpus = /*CPUS*/ [];
 const memories = /*MEMORIES*/ [];
+const types = /*TYPES*/ [];
+const heap = /*HEAP*/ [];
 const annotations = /*ANNOTATIONS*/ [];
 const duration = /*DURATION*/ 0;
 
 const memoryScores = {};
 const cpuScores = {};
+const heapScores = {};
 const colors = [];
 const colorValues = [ 52, 192, 256 ];
 for (const r of colorValues) {
@@ -347,6 +353,15 @@ function addMemoryScoresToTimeline() {
     }
 }
 
+function indexHeap() {
+    for (const snapshot of heap) {
+        const [when, counts] = snapshot;
+        const x = getX(when);
+        console.log("add heap score", x, counts)
+        heapScores[x] = counts;
+    }
+}
+
     
 function addCallToTimeline(call) {
     const timeline = $("#timeline");
@@ -384,7 +399,7 @@ function updateTimeline(call) {
         .css("left", getX(when));
     $("#timelinetime")
         .css("left", getX(when))
-        .text((when / 1000).toFixed(1) + "s");
+        .text(`${toHourMinSec(when)}`)
 }
 
 function annotateTimeline(index) {
@@ -432,14 +447,43 @@ function toGB(bytes) {
     return `${bytes} bytes`;
 }
 
+const SECOND = 1;
+const MINUTE = 60 * SECOND;
+const HOUR = 60 * MINUTE;
+
+function toHourMinSec(millis) {
+    const when = millis / 1000;
+    const hours = Math.round(when / HOUR);
+    const minutes = Math.round(when / MINUTE);
+    const seconds = (when % MINUTE).toFixed(1);
+    const hours_string = hours ? `${hours}h` : "";
+    const minutes_string = minutes ? `${minutes}m` : "";
+    const seconds_string = seconds ? `${seconds}s` : "";
+    return hours_string + minutes_string + seconds_string;
+}
+
+
+function findClosest(scores, x) {
+    const width = $("body").width();
+    for (var n=x; n>0; n--) if (scores[n]) return scores[n];
+    for (var n=x; n<width; n++) if (scores[n]) return scores[n];
+    return undefined;
+}
+
+
 $("#timelinecanvas")
     .on("mousemove", event => {
         const [x, when] = getXWhen(event);
         var index = x;
-        while (index>0 && !memoryScores[index]) index--;
-        const memory = toGB(memoryScores[index]);
-        const [cpu, systemCpu] = cpuScores[index];
-        showHover(x + 20, 0, `cpu:${cpu}%   system:${systemCpu}%   memory:${memory}`);
+        const memory = toGB(findClosest(memoryScores, x));
+        const [cpu, systemCpu] = findClosest(cpuScores, x);
+        showHover(x + 20, 0,
+            `${toHourMinSec(when)}: ` +
+            `cpu:${cpu}%   ` +
+            `system:${systemCpu}%   ` +
+            `memory:${memory}`);
+        const snapshot = findClosest(heapScores, x);
+        showHeap(x + 20, snapshot);
     });
 
 function updateTimelineHover(event, marker, text) {
@@ -450,18 +494,34 @@ function updateTimelineHover(event, marker, text) {
 function showHover(x, y, text) {
     const width = $("body").width();
     $("#timelinehover")
+        .text(text)
         .css({
             left: x > width / 2 ? x - $("#timelinehover").width() : x, 
             top: 170,
-        })
-        .text(text);
+        });
     $("#timelinehoverconnector")
         .css({
             left: x,
             top: y,
             height: 168 - y,
         });
-    event.stopPropagation();
+}
+
+function showHeap(x, snapshot) {
+    const width = $("body").width();
+    $("#timelinehoverheap")
+        .empty()
+        .css({
+            left: x > width / 2 ? x - $("#timelinehoverheap").width() : x, 
+            top: 190,
+        });
+    for (const measure of snapshot) {
+        const [index, count, size] = measure;
+        const typename = types[index];
+        $("<div>")
+            .text(`${toGB(size)} ${count} ${typename}`)
+            .prependTo($("#timelinehoverheap"));
+    }
 }
 
 $("#focus")
@@ -672,6 +732,7 @@ function initTimeline() {
     addCallsToTimeline(0);
     addCpuScoresToTimeline();
     addMemoryScoresToTimeline();
+    indexHeap();
 }
 
 function checkHidden() {
@@ -721,12 +782,18 @@ function isPlaying() {
 }
 
 function startPlaying() {
-    $("#timelineplay").text("stop");
+    $("#timelineplay")
+        .css("border-color", "red")
+        .css("background-color", "red")
+        .text("stop");
     playCalls();
 }
 
 function stopPlaying() {
-    $("#timelineplay").text("start");
+    $("#timelineplay")
+        .css("border-color", "green")
+        .css("background-color", "green")
+        .text("start");
     paused = false;
 }
 
