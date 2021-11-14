@@ -78,7 +78,7 @@
         #timelinehandle {
             position: relative;
             top: 0;
-            left: 0;
+            left: -100;
             width: 2px;
             height: 140px;
             background-color: red;
@@ -197,12 +197,13 @@ const PARTICLE_COLOR_SYSTEM = 'white';
 const PARTICLE_COLOR_SELF = 'orange';
 
 const settings = {
-    toplevel: localStorage.getItem("toplevel") == "true",
-    counts: localStorage.getItem("counts") != "false",
-    dots: localStorage.getItem("dots") != "false",
-    bloom: localStorage.getItem("bloom") == "true",
-    full: localStorage.getItem("full") == "true",
-    focus: localStorage.getItem("focus"),
+    toplevel: getPreference("toplevel") == "true",
+    counts: getPreference("counts") == "true",
+    dots: getPreference("dots") == "true",
+    bloom: getPreference("bloom") == "true",
+    full: getPreference("full") == "true",
+    focus: getPreference("focus"),
+    time: parseInt(getPreference("time") || "0"),
 };
 const sprites = {};
 const Graph = createGraph();
@@ -213,7 +214,7 @@ var newNodes = {}
 var newLinks = {}
 var liveLinks = {}
 var graphData = Graph.graphData();
-var playIndex = 0;
+var playIndex = settings.time;
 var timelineMarkerCount = 0;
 var paused = false;
 
@@ -247,7 +248,7 @@ function getColor(group) {
 
 var PLAY_SECTION_DURATION = 50;
 
-$(window).resize(() => location.reload());
+$(window).resize(() => window.location.reload());
 $("#timeline")
     .prepend($("<canvas>")
         .css("position", "absolute")
@@ -268,14 +269,11 @@ function timelineClick(event) {
     stopPlaying();
     const [x, gotoWhen] = getXWhen(event);
     playIndex = 0;
-    while (playIndex < calls.length) {
-        // linear search, consider binary search for large recordings...
-        if (getWhen(playIndex) > gotoWhen) {
-            setTimeout(startPlaying, 1000);
-            return updateTimeline(calls[playIndex-1]);
-        }
+    // use linear search, even for large recordings, binary search is overkill
+    while (playIndex < calls.length && getWhen(playIndex) < gotoWhen) {
         playIndex++;
     }
+    reloadWith("time", `${playIndex}`);
 }
 $('#timemax').text((programDuration / 1000).toFixed(1) + "s");
 $('#timeline').click((event) => {
@@ -330,7 +328,6 @@ function drawGCMarker(context, x, y, duration, color) {
     context.strokeStyle = color;
     context.lineWidth = 2;
     const radius = getX(duration) - getX(0) + 3;
-    console.log("gc", duration, radius)
     context.arc(x, y, radius, 0, 2 * Math.PI)
     context.stroke();
 }
@@ -512,15 +509,13 @@ function findClosest(scores, x, defaultValue) {
     return defaultValue;
 }
 
-
-var hoverHider = setTimeout(() => {}, 1);
 function hideHover() {
-    clearTimeout(hoverHider);
-    hoverHider = setTimeout(() => {
-        $("#timelinehover,#timelinehoverconnector,#timelinehoverheap")
-            .css("top", -10000);
-    }, 10000)
+    $("#timelinehover,#timelinehoverconnector,#timelinehoverheap")
+        .css("top", -10000);
 }
+
+$("body")
+    .on("mousemove", hideHover);
 
 $("#timelinecanvas")
     .on("mousemove", event => {
@@ -535,7 +530,7 @@ $("#timelinecanvas")
             `memory:${memory}`);
         const snapshot = findClosest(heapScores, x, []);
         showHeap(x + 20, snapshot);
-        hideHover();
+        event.stopPropagation();
     });
 
 function updateTimelineHover(event, marker, text) {
@@ -581,46 +576,50 @@ function showHeap(x, snapshot) {
     }
 }
 
+function getPreference(key) {
+    return new URLSearchParams(window.location.search).get(key) || "";
+}
+
+function reloadWith(key, value) {
+    settings[key] = value;
+    var search = "?";
+    for (key in settings) {
+        if (settings[key]) {
+            search += `&${key}=${settings[key]}`;
+        }
+    }
+    window.location.search = search;
+}
+
 $("#focus")
     .val(settings.focus)
     .on("change", () => {
-        settings.focus = $("#focus").val();
-        localStorage.setItem("focus", settings.focus);
-        location.reload();
+        reloadWith("focus", $("#focus").val());
     });
 $("#toplevel")
     .prop("checked", settings.toplevel)
     .on("change", () => {
-        settings.toplevel = $("#toplevel").is(":checked");
-        localStorage.setItem("toplevel", settings.toplevel);
-        location.reload();
+        reloadWith("toplevel", $("#toplevel").is(":checked"));
     });
 $("#bloom")
     .prop("checked", settings.bloom)
     .on("change", () => {
-        settings.bloom = $("#bloom").is(":checked");
-        localStorage.setItem("bloom", settings.bloom);
-        location.reload();
+        reloadWith("bloom", $("#bloom").is(":checked"));
     });
 $("#full")
     .prop("checked", settings.full)
     .on("change", () => {
-        settings.full = $("#full").is(":checked");
-        localStorage.setItem("full", settings.full);
-        location.reload();
+        reloadWith("full", $("#full").is(":checked"));
     });
 $("#counts")
     .prop("checked", settings.counts)
     .on("change", () => {
-        settings.counts = $("#counts").is(":checked");
-        localStorage.setItem("counts", settings.counts);
-        Object.values(sprites).forEach(sprite => sprite.text = settings.counts ? `${count}` : "");
+        reloadWith("counts", $("#counts").is(":checked"));
     });
 $("#dots")
     .prop("checked", settings.dots)
     .on("change", () => {
-        settings.dots = $("#dots").is(":checked");
-        localStorage.setItem("dots", settings.dots);
+        reloadWith("dots", $("#dots").is(":checked"));
     });
 
 function createGraph() {
@@ -785,6 +784,7 @@ function getTimeMillis() {
 }
 
 function initTimeline() {
+    updateTimeline(calls[playIndex]);
     annotateTimeline(0);
     addCallsToTimeline(0);
     addCpuScoresToTimeline();
@@ -808,7 +808,7 @@ function checkHidden() {
 
 function playCalls() {
     if (playIndex >= calls.length) {
-        playIndex = 0;
+        playIndex = settings.time;
     } 
     const clockStart = getTimeMillis();
     const whenStart = getWhen(playIndex);
@@ -857,7 +857,7 @@ function stopPlaying() {
 setInterval(updateLinks, 1000);
 setInterval(checkHidden, 1000);
 initTimeline();
-startPlaying();
+setTimeout(startPlaying, 1000);
 
           </script>
     </body>

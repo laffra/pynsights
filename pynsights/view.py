@@ -53,7 +53,6 @@ def addCall(when, callsite):
     lastCall[callsite] = when, count + 1
 
 def handle_line(line):
-    print(line)
     global duration, when
     items = line[:-1].split()
     kind = int(items[0])
