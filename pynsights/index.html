@@ -197,10 +197,10 @@ const PARTICLE_COLOR_SYSTEM = 'white';
 const PARTICLE_COLOR_SELF = 'orange';
 
 const settings = {
+    counts: getPreference("counts") != "false",
+    dots: getPreference("dots") != "false",
+    bloom: getPreference("bloom") != "false",
     toplevel: getPreference("toplevel") == "true",
-    counts: getPreference("counts") == "true",
-    dots: getPreference("dots") == "true",
-    bloom: getPreference("bloom") == "true",
     full: getPreference("full") == "true",
     focus: getPreference("focus"),
     time: parseInt(getPreference("time") || "0"),
@@ -584,9 +584,7 @@ function reloadWith(key, value) {
     settings[key] = value;
     var search = "?";
     for (key in settings) {
-        if (settings[key]) {
-            search += `&${key}=${settings[key]}`;
-        }
+        search += `&${key}=${settings[key]}`;
     }
     window.location.search = search;
 }
