@@ -3,3 +3,5 @@ env_pynsights/*
 install.egg-info/*
 pyinsights.egg-info/*
 *.pyc
+venv/
+.venv/

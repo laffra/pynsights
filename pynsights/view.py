@@ -3,9 +3,8 @@
 """
 
 import json
-import sys
 import webbrowser
-from constants import *
+from pynsights.constants import *
 
 modulenames = []
 typenames = []
@@ -20,14 +19,12 @@ duration = 0
 lastCall = {}
 when = 0
 
-dump_filename = None
-index_output_filename = None
-index_input_filename = __file__.replace("view.py", "index.html")
+template_file = __file__.replace("view.py", "index.html")
 
 
-def read_dump():
+def read_dump(input_file):
     done = 0
-    with open(dump_filename) as fp:
+    with open(input_file) as fp:
         lines = fp.readlines()
         one_percent = round(len(lines) / 100)
         for n, line in enumerate(lines):
@@ -102,36 +99,33 @@ def handle_line(line):
         when = int(items[1])
 
 
-def open_ui():
-    with open(index_input_filename) as fin:
-        html = fin.read() \
-            .replace("/*DURATION*/", str(duration) + " //") \
-            .replace("/*MODULENAMES*/", json.dumps(modulenames, indent=4) + " //") \
-            .replace("/*CALLSITES*/", json.dumps(callsites) + " //") \
-            .replace("/*CALLS*/", json.dumps(calls) + " //") \
-            .replace("/*CPUS*/", json.dumps(cpus) + " //") \
-            .replace("/*ANNOTATIONS*/", json.dumps(annotations) + " //") \
-            .replace("/*HEAP*/", "[\n    " + ",\n    ".join(json.dumps(snapshot) for snapshot in heap) + "\n] //") \
-            .replace("/*GC*/", "[\n    " + ",\n    ".join(json.dumps(gc) for gc in gcs) + "\n] //") \
-            .replace("/*TYPES*/", json.dumps(typenames) + " //") \
-            .replace("/*MEMORIES*/", json.dumps(memories, indent=4) + " //")
-        with open(index_output_filename, "w") as fout:
-            fout.write(html)
-        print("Opening", index_output_filename)
-        webbrowser.open("file://" + index_output_filename)
+def render(output):
+    with open(template_file) as fin:
+        template = fin.read()
+    html = template\
+        .replace("/*DURATION*/", str(duration) + " //") \
+        .replace("/*MODULENAMES*/", json.dumps(modulenames, indent=4) + " //") \
+        .replace("/*CALLSITES*/", json.dumps(callsites) + " //") \
+        .replace("/*CALLS*/", json.dumps(calls) + " //") \
+        .replace("/*CPUS*/", json.dumps(cpus) + " //") \
+        .replace("/*ANNOTATIONS*/", json.dumps(annotations) + " //") \
+        .replace("/*HEAP*/", "[\n    " + ",\n    ".join(json.dumps(snapshot) for snapshot in heap) + "\n] //") \
+        .replace("/*GC*/", "[\n    " + ",\n    ".join(json.dumps(gc) for gc in gcs) + "\n] //") \
+        .replace("/*TYPES*/", json.dumps(typenames) + " //") \
+        .replace("/*MEMORIES*/", json.dumps(memories, indent=4) + " //")
+    with open(output, "w") as fout:
+        fout.write(html)
 
 
-def main():
-    global dump_filename
-    global index_output_filename
-    if len(sys.argv) != 2:
-        print("Usage: view <path-to-pynsights-trace-file>")
-    else:
-        dump_filename = sys.argv[1]
-        index_output_filename = dump_filename.replace(".txt", ".html")
-        read_dump()
-        open_ui()
+def open_ui(output):
+    print("Opening", output)
+    webbrowser.open("file://" + str(output.resolve()))
 
 
-if __name__ == "__main__":
-    main()
+def view(input_file, output=None, open_browser=False):
+    read_dump(input_file)
+    if output is None:
+        output = input_file.with_suffix(".html")
+    render(output)
+    if open_browser:
+        open_ui(output)
