@@ -19,8 +19,19 @@ from pympler import summary
 from .constants import *
 
 process = psutil.Process(os.getpid())
+
 caller = inspect.stack()[-1]
-caller_module = caller[1].replace(".py", "")
+if caller[1].endswith("runpy.py"):
+    # prefer sys.argv[0]
+    caller_module = sys.argv[0]
+    if caller_module.endswith("__main__.py"):
+        # use the directory name instead, which is the package name
+        caller_module = os.path.dirname(caller_module)
+else:
+    caller_module = caller[1]
+
+# keep only the base name without extension
+caller_module = os.path.basename(caller_module.replace(".py", ""))
 
 output_filename = "%s/pynsights_trace_%s.txt" % (os.path.expanduser('~'), caller_module)
 output = None
