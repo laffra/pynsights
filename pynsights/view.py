@@ -130,7 +130,10 @@ def main():
         dump_filename = sys.argv[1]
         index_output_filename = dump_filename.replace(".txt", ".html")
         read_dump()
-        open_ui()
+        if calls:
+            open_ui()
+        else:
+            print("Error: no calls collected")
 
 
 if __name__ == "__main__":
