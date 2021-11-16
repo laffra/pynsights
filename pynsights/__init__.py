@@ -228,6 +228,7 @@ def start_metrics_monitor():
 
 def start_tracing():
     global output, tracing
+    if tracing: return
     tracing = True
     output = open(output_filename, "w")
     print("Pynsights: tracing started. See", output_filename)
