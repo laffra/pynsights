@@ -211,6 +211,7 @@ const settings = {
     bloom: getPreference("bloom") != "false",
     toplevel: getPreference("toplevel") == "true",
     full: getPreference("full") == "true",
+    sound: getPreference("sound") == "true",
     focus: getPreference("focus"),
     time: parseInt(getPreference("time") || "0"),
 };
@@ -283,9 +284,7 @@ function timelineClick(event) {
     while (playIndex < calls.length && getWhen(playIndex) < gotoWhen) {
         playIndex++;
     }
-    if (!soundEnabled) {
-        reloadWith("time", `${playIndex}`);
-    }
+    reloadWith("time", `${playIndex}`);
     startPlaying();
 }
 $('#timemax').text((programDuration / 1000).toFixed(1) + "s");
@@ -613,8 +612,9 @@ $("#toplevel")
         reloadWith("toplevel", $("#toplevel").is(":checked"));
     });
 $("#sound")
+    .prop("checked", settings.sound)
     .on("change", () => {
-        enableSound($("#sound").is(":checked"));
+        reloadWith("sound", $("#sound").is(":checked"));
     });
 $("#bloom")
     .prop("checked", settings.bloom)
@@ -699,8 +699,6 @@ function updateGraph() {
     newNodes = {};
 }
 
-var soundEnabled = false;
-
 const instrument = {
     url: "https://chrislaffra.com/instruments/",
     volume: 0.15,
@@ -710,12 +708,7 @@ const instrument = {
     speed: [ 2.0, 2.0, 2.0 ],
 }
 
-function enableSound(enabled) {
-    soundEnabled = enabled;
-}
-
 function beep(node) {
-    if (!soundEnabled) return;
     const index = node.group.hashCode() % 3;
     const name = instrument.names[index];
     const note = 1 + Math.round(node.id.hashCode() % instrument.notes[index]);
@@ -767,6 +760,7 @@ function addLink(when, sourceIndex, targetIndex, count) {
     const target = addNode(targetIndex);
     const key = linkKey(source.id, target.id);
     setTimeout(() => {
+        if (!settings.sound) return;
         beep(source);
     }, Math.random() * playChunkDelay);
     var link = linkMap[key];
@@ -893,11 +887,38 @@ function isPlaying() {
 }
 
 function startPlaying() {
-    $("#timelineplay")
-        .css("border-color", "red")
-        .css("background-color", "red")
-        .text("stop");
-    playCalls();
+    function start() {
+        $("#timelineplay")
+            .css("border-color", "red")
+            .css("background-color", "red")
+            .text("stop");
+        playCalls();
+    }
+    if (settings.sound) {
+        $('<div></div>')
+            .appendTo('body')
+            .html("Sound is enabled. Do you want to proceed?")
+            .dialog({
+                modal: true,
+                title: 'Play sounds?',
+                zIndex: 10000,
+                autoOpen: true,
+                width: 'auto',
+                resizable: false,
+                buttons: {
+                    Yes: function() {
+                        $(this).dialog("close");
+                        start();
+                    },
+                    No: function() {
+                        $(this).dialog("close");
+                        settings.sound = false;
+                    }
+            }
+        });
+    } else {
+        start();
+    }
 }
 
 function stopPlaying() {
