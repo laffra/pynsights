@@ -29,4 +29,9 @@ setup(
     cmdclass = {
         'install': CustomInstall,
     },
+    entry_points = {
+        "console_scripts": [
+            "pynsights = pynsights.cli:main",
+        ]
+    }
 )
