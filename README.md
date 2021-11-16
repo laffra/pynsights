@@ -12,45 +12,29 @@ pip install git+https://github.com/laffra/pynsights
 
 # Make a Recording
 
-To enable Pynsights, import the module and start the recorder:
+To make a recording, run:
 
 ```
-import pynsights
-
-if __name__ == "__main__":
-    with pynsights.Recorder():
-        App().run()
+python -m pynsights record [-o <tracefilename>] <modulename>
 ```
 
-Tracing is active for the duration of the context manager. 
-You can manually toggle the tracer using
-`Pynsights.start_tracing()` and `Pynsights.stop_tracing()`.
+# View the Recording
 
-# Change the Recording Location
-
-If your main script is named `main`, the recording is save in `~/pynsight_trace_main.txt`.
-By passing a different file path to the recorder, you can change where the recording is saved:
+To view the recording, run:
 
 ```
-if __name__ == "__main__":
-    with pynsights.Recorder("~/main.txt"):
-        App().run()
+python -m render [-w] <tracefilename>
 ```
 
-# Viewing the Recording
+This CLI command converts the recording into a standalone HTML format. When
+you pass `-w`, the HTML will also be launched in a browser. The resulting HTML file
+can be hosted and run at any time by loading it into a browser. 
 
-To view the recording, run the following:
-
-```
-python pynsights/view.py ~/pynsights_trace_main.txt
-```
-
-This does two things: 1. convert the recording into HTML format and 2. open it.
-The resulting output can be found in `~/pynsights_trace_main.html`, or
-whatever location where you chose to save the recording. This HTML file
-is fully standalone and can be hosted. 
+# Pynsights Example Recording
 
 ![Pynsights timeline](images/timeline.gif)
+
+Pynsights shows the modules in your program and how they interact.
 
 The timeline shows a subset of the modules active in the graph over time. The white labels
 under the timeline are created using `pynsights.annotate(message)`, see below.
@@ -75,3 +59,31 @@ Enable or disable `Bloom` to change the graph rendering.
 With `Counts` and `Dots` the links in the graph can be annotated with 
 number of calls made between the two modules it links and when messages
 are sent between the modules.
+
+# Make a Recording by Changing your Code
+
+Above we showed how to use the CLI.
+To enable Pynsights from within your module source itself, import `pynsights` and start the recorder:
+
+```
+import pynsights
+
+if __name__ == "__main__":
+    with pynsights.Recorder():
+        App().run()
+```
+
+Tracing is active for the duration of the context manager. 
+
+You can manually toggle the tracer using `Pynsights.start_tracing()` and `Pynsights.stop_tracing()`.
+
+# Change the Recording Location
+
+If your main script is named `main`, the recording is save in `~/pynsight_trace_main.txt`.
+By passing a different file path to the recorder, you can change where the recording is saved:
+
+```
+if __name__ == "__main__":
+    with pynsights.Recorder("~/main.txt"):
+        App().run()
+```
