@@ -66,7 +66,7 @@ def get_parser() -> argparse.ArgumentParser:
 
 
 def record(command, output=None):
-    module = command[0]
+    module = command[1] if command[0] == "-m" else command[0]
     if Path(module).exists():
         runpy = run_path
     else:
