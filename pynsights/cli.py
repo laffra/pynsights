@@ -15,6 +15,8 @@ from __future__ import annotations
 
 import argparse
 import sys
+import tempfile
+from contextlib import suppress
 from pathlib import Path
 from runpy import run_module, run_path
 
@@ -55,10 +57,10 @@ def get_parser() -> argparse.ArgumentParser:
     render_parser.add_argument("input_file", type=Path, help="The input data file to render.")
     render_parser.add_argument("-o", "--output", type=Path, default=None, help="Output path of the standalone HTML.")
 
-    run_parser = subparser("render", "Render the given data file into a standalone HTML file.")
+    run_parser = subparser("run", "Record and render in one go.")
     run_parser.add_argument("-w", "--browser", "--open", dest="browser", action="store_true", help="Open the HTML file in your default browser.")
-    run_parser.add_argument("input_file", type=Path, help="The input data file to render.")
-    run_parser.add_argument("-o", "--output", type=Path, default=None, help="Output path of the standalone HTML.")
+    run_parser.add_argument("-o", "--output", type=Path, default=None, help="Output path of the final HTML file.")
+    run_parser.add_argument("record_command", nargs="+", help="The Python script/module to run and its options.")
 
     return parser
 
@@ -71,12 +73,21 @@ def record(command, output=None):
         runpy = run_module
     
     sys.argv = command
-    with Recorder(output):
-        runpy(module, run_name="__main__")
+    with suppress(SystemExit):
+        with Recorder(output):
+            runpy(module, run_name="__main__")
 
 
 def render(input_file, output_file, open_browser):
     view(input_file, output_file, open_browser)
+
+
+def run(command, output=None, open_browser=False):
+    tmpname = Path(command[0]).stem
+    with tempfile.TemporaryDirectory() as tmpdir:
+        data_file = Path(tmpdir, f"{tmpname}.txt")
+        record(command, output=data_file)
+        render(data_file, output or f"{tmpname}.html", open_browser)
 
 
 def main(args: list[str] | None = None) -> int:
@@ -100,6 +111,10 @@ def main(args: list[str] | None = None) -> int:
     
     if opts.command == "render":
         render(opts.input_file, opts.output, opts.browser)
+        return 0
+
+    if opts.command == "run":
+        run(opts.record_command, opts.output, opts.browser)
         return 0
     
     if opts.command:

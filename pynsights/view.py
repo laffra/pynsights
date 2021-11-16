@@ -22,6 +22,10 @@ when = 0
 template_file = __file__.replace("view.py", "index.html")
 
 
+def show_progress(percent, end=""):
+    print(f"\rPynsights: rendering, {percent}% done", end=end)
+
+
 def read_dump(input_file):
     done = 0
     with open(input_file) as fp:
@@ -31,9 +35,11 @@ def read_dump(input_file):
             handle_line(line)
             if not one_percent or n % one_percent == 0:
                 if done % 10 == 0:
-                    print("%d%% done" % done)
+                    show_progress(done)
                 done += 1
         flushCallSites()
+    show_progress(100, "\n")
+
 
 def flushCallSites():
     for callsite in lastCall:
