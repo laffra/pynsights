@@ -175,16 +175,25 @@
         <div id="timemax">0</div>
         <div class="controls">
             <div id="timelineplay">start</div>
+
             <label >Focus:</label>
             <input id="focus"></input>
+
+            <input type="checkbox" id="sound"></input>
+            <label for="sound">Sound</label>
+
             <input type="checkbox" id="full"></input>
             <label for="full">Full</label>
+
             <input type="checkbox" id="bloom"></input>
             <label for="bloom">Bloom</label>
+
             <input type="checkbox" id="toplevel"></input>
             <label for="toplevel">Toplevel</label>
+
             <input type="checkbox" id="counts"></input>
             <label for="counts">Counts</label>
+        
             <input type="checkbox" id="dots"></input>
             <label for="dots">Dots</label>
         </div>
@@ -247,6 +256,7 @@ function getColor(group) {
 }
 
 var PLAY_SECTION_DURATION = 50;
+var playChunkDelay = 50;
 
 $(window).resize(() => window.location.reload());
 $("#timeline")
@@ -273,7 +283,10 @@ function timelineClick(event) {
     while (playIndex < calls.length && getWhen(playIndex) < gotoWhen) {
         playIndex++;
     }
-    reloadWith("time", `${playIndex}`);
+    if (!soundEnabled) {
+        reloadWith("time", `${playIndex}`);
+    }
+    startPlaying();
 }
 $('#timemax').text((programDuration / 1000).toFixed(1) + "s");
 $('#timeline').click((event) => {
@@ -599,6 +612,10 @@ $("#toplevel")
     .on("change", () => {
         reloadWith("toplevel", $("#toplevel").is(":checked"));
     });
+$("#sound")
+    .on("change", () => {
+        enableSound($("#sound").is(":checked"));
+    });
 $("#bloom")
     .prop("checked", settings.bloom)
     .on("change", () => {
@@ -682,6 +699,32 @@ function updateGraph() {
     newNodes = {};
 }
 
+var soundEnabled = false;
+
+const instrument = {
+    url: "https://chrislaffra.com/instruments/",
+    volume: 0.15,
+    duration: 500,
+    names: [ "piano", "flute", "drums" ],
+    notes: [ 88, 60, 50 ],
+    speed: [ 2.0, 2.0, 2.0 ],
+}
+
+function enableSound(enabled) {
+    soundEnabled = enabled;
+}
+
+function beep(node) {
+    if (!soundEnabled) return;
+    const index = node.group.hashCode() % 3;
+    const name = instrument.names[index];
+    const note = 1 + Math.round(node.id.hashCode() % instrument.notes[index]);
+    const url = `${instrument.url}/${name}/${note}.mp3?raw=true`;
+    const audio = new Audio(url);
+    audio.playbackRate = instrument.speed[index];
+    audio.play();
+}
+
 function updateLinks() {
     Object.values(liveLinks).map(updateLink);
     liveLinks = {};
@@ -718,11 +761,14 @@ function addNode(index) {
     return nodeMap[moduleName];
 }
 
-function addLink(when, sourceIndex, targetIndex) {
+function addLink(when, sourceIndex, targetIndex, count) {
     if (!inFocus(sourceIndex) || !inFocus(targetIndex)) return;
     const source = addNode(sourceIndex);
     const target = addNode(targetIndex);
     const key = linkKey(source.id, target.id);
+    setTimeout(() => {
+        beep(source);
+    }, Math.random() * playChunkDelay);
     var link = linkMap[key];
     if (link === undefined) {
         link = {
@@ -737,7 +783,7 @@ function addLink(when, sourceIndex, targetIndex) {
         newLinks[key] = link;
         linkMap[key] = link;
     }
-    link.count++;
+    link.count += count;
     liveLinks[key] = { when, link };
 }
 
@@ -766,7 +812,7 @@ function addToGraph(call) {
     const [source, target] = callsites[callsiteIndex];
     if (getGroupName(source) == "bootstrap") return;
     if (getGroupName(target) == "bootstrap") return;
-    addLink(when, source, target);
+    addLink(when, source, target, count);
 }
 
 function findChunkEnd(n) {
@@ -804,17 +850,26 @@ function checkHidden() {
     }
 }
 
+function resetLinkCounts() {
+    for (const link of Object.values(linkMap)) {
+        link.count = 0;
+        sprites[link.key].text = link.count ? `${link.count}` : "";
+    }
+}
+
 function playCalls() {
     if (playIndex >= calls.length) {
-        playIndex = settings.time;
+        playIndex = settings.time >= calls.length ? 0 : settings.time;
     } 
+    if (playIndex == 0) resetLinkCounts();
     const clockStart = getTimeMillis();
     const whenStart = getWhen(playIndex);
     function playChunk() {
         if (!isPlaying()) return;
         const chunkEnd = findChunkEnd(playIndex);
         while (isPlaying() && playIndex < chunkEnd) {
-            addToGraph(calls[playIndex++]);
+            const call = calls[playIndex++];
+            addToGraph(call);
         }
         updateGraph();
         if (playIndex >= calls.length) {
@@ -825,7 +880,8 @@ function playCalls() {
             const whenNow = getWhen(playIndex);
             const clockDuration = clockNow - clockStart;
             const whenDuration = whenNow - whenStart;
-            setTimeout(playChunk, Math.min(500, Math.max(1, whenDuration - clockDuration)));
+            playChunkDelay = Math.min(500, Math.max(1, whenDuration - clockDuration));
+            setTimeout(playChunk, playChunkDelay)
         }
         updateTimeline(calls[playIndex]);
     }
