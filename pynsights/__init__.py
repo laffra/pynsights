@@ -8,6 +8,7 @@ import functools
 import gc
 import json
 import os
+import pathlib
 import re
 import sys
 import threading
@@ -56,6 +57,7 @@ last_flush = 0
 FLUSH_INTERVAL = 1.0
 METRICS_INTERVAL = 0.5
 HEAP_TIMER = 20
+group_module_map = {}
 last_heap_snapshot = None
 heap_timer = 1
 tracing = False
@@ -106,20 +108,24 @@ def get_callsite_index(source, target):
 
 
 def get_group_and_module(filename):
+    if filename in group_module_map:
+        return group_module_map[filename]
     parts = re.split(PATHSEP, filename)
+    parts[-1] = pathlib.Path(parts[-1]).stem
     if len(parts) == 1:
         basename = parts[0]
         if basename.startswith("<frozen "):
             parts = ["<builtin>", parts[0].replace("<frozen ", "").replace(">", "")]
         else:
             parts = [parts[0], parts[0]]
-    group = ".".join(parts[-3:-1]).replace("\\.py", "")
+    group = ".".join(parts[-3:-1])
     if re.match(PYTHONRUNTIME, group):
         group = "<builtin>"
-    module = parts[-1].replace("\\.py", "")
-    if group == "pynsights" and module == "__init__":
+    module = parts[-1].replace("__init__", group)
+    if module == "pynsights.pynsights":
         raise SkipCall("skip pynsights calls")
-    return "%s %s" % (group, module)
+    group_module_map[filename] = group, module
+    return f"{group} {module}"
 
 
 def extract_call(frame):

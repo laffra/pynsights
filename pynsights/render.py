@@ -51,10 +51,17 @@ def flush_call_sites():
         calls.append((when, callsite, count))
     last_call.clear()
 
+MODULES_TO_SKIP = {
+    ("<builtin>", "runpy"),
+    ("<builtin>", "pkgutil"),
+    ("<builtin>", "zipimport"),
+    ("<builtin>", "importlib"),
+    ("pynsights.pynsights", "cli"),
+}
+
 def skip_module(moduleIndex):
     if moduleIndex < len(modulenames):
-        group, module = modulenames[moduleIndex]
-        return group in ["<builtin>", "pynsights.pynsights"] or module in ["runpy", "pkgutil"]
+        return modulenames[moduleIndex] in MODULES_TO_SKIP
 
 def skip_call(callsite):
     if callsite < len(callsites):
