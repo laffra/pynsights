@@ -37,7 +37,11 @@ def read_dump(input_file):
         lines = fp.readlines()
         one_percent = round(len(lines) / 100)
         for n, line in enumerate(lines):
-            handle_line(line)
+            try:
+                handle_line(line)
+            except Exception as e:
+                print(f"Error handling line: '{line}'")
+                print(e)
             if not one_percent or n % one_percent == 0:
                 show_progress(done)
                 done += 1
