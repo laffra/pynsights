@@ -181,9 +181,9 @@
 
             <label for="level">Detail:</label>
             <select id="level">
-                <option name="high">high</label>
-                <option name="medium"></option>medium</label>
-                <option name="low">low</label>
+                <option name="high">high</option>
+                <option name="medium">medium</option>
+                <option name="low">low</option>
             </select>
 
             <input type="checkbox" id="sound"></input>
@@ -232,43 +232,47 @@ var playIndex = settings.time;
 var timelineMarkerCount = 0;
 var paused = false;
 
-const modulenames = ["runpy", "pynsights.cli", "pkgutil", "zipimport", "importlib._bootstrap_external", "pynsights", "example", "importlib._bootstrap", "hello.helloworld", "hello.hello", "hello.world", "functools", "threading"] // [];
-const callsites = [[1, 0], [0, 2], [2, 3], [3, 4], [2, 4], [0, 5], [0, 6], [6, 7], [7, 4], [4, 7], [4, 3], [7, 8], [8, 7], [7, 9], [7, 10], [6, 5], [5, 11], [5, 6], [6, 8], [8, 9], [8, 10], [1, 5], [5, 12]] // [];
-const calls = [[242, 18, 1], [242, 19, 1], [242, 20, 1], [346, 18, 1], [346, 19, 1], [346, 20, 1], [447, 18, 1], [447, 19, 1], [447, 20, 1], [547, 18, 1], [547, 19, 1], [547, 20, 1], [647, 18, 1], [647, 19, 1], [647, 20, 1], [748, 18, 1], [748, 19, 1], [748, 20, 1], [848, 18, 1], [848, 19, 1], [848, 20, 1], [949, 18, 1], [949, 19, 1], [949, 20, 1], [1049, 18, 1], [1049, 19, 1], [1049, 20, 1], [1149, 18, 1], [1149, 19, 1], [1149, 20, 1]] // [];
-const cpus = [[8, 0.0, 14.4], [763, 2.8, 10.8], [1253, 0.1, 9.9]] // [];
+const modulenames = ["runpy", "pynsights.cli", "pkgutil", "pynsights", "example", "hello.helloworld", "hello.hello", "hello.world", "functools", "threading"] // [];
+const callsites = [[1, 0], [0, 2], [0, 3], [0, 4], [4, 3], [3, 8], [3, 4], [4, 5], [5, 6], [5, 7], [1, 3], [3, 9]] // [];
+const calls = [[426, 7, 1], [426, 8, 1], [426, 9, 1], [530, 7, 1], [530, 8, 1], [530, 9, 1], [631, 7, 1], [631, 8, 1], [631, 9, 1], [736, 7, 1], [736, 8, 1], [736, 9, 1], [840, 7, 1], [840, 8, 1], [840, 9, 1], [942, 7, 1], [942, 8, 1], [942, 9, 1], [1044, 7, 1], [1044, 8, 1], [1044, 9, 1], [1148, 7, 1], [1148, 8, 1], [1148, 9, 1], [1248, 7, 1], [1248, 8, 1], [1248, 9, 1], [1348, 7, 1], [1348, 8, 1], [1348, 9, 1]] // [];
+const cpus = [[9, 0.0, 20.9], [784, 4.5, 26.6], [1286, 0.0, 25.3], [1455, 0.2, 32.5]] // [];
 const memories = [
     [
-        8,
-        21762048.0
+        9,
+        21975040.0
     ],
     [
-        763,
-        26943488.0
+        784,
+        26517504.0
     ],
     [
-        1253,
-        26943488.0
+        1286,
+        26517504.0
+    ],
+    [
+        1455,
+        26521600.0
     ]
 ] // [];
 const types = ["member_descriptor", "enum.EnumMeta", "function", "frozenset", "getset_descriptor", "int", "method_descriptor", "weakref", "abc.ABCMeta", "builtin_function_or_method", "wrapper_descriptor", "set", "_io.BufferedReader", "tuple", "_io.BufferedWriter", "list", "code", "type", "dict", "str", "Total#Heap#Size#and#Count"] // [];
 const heap = [
-    [1253, [[0, 372, 23808], [1, 29, 30688], [2, 247, 33592], [3, 105, 36248], [4, 626, 40064], [5, 2182, 65672], [6, 936, 67392], [7, 1093, 78696], [8, 80, 80544], [9, 1140, 82080], [10, 1223, 88056], [11, 110, 100560], [12, 1, 131240], [13, 3024, 174928], [14, 3, 266744], [15, 3187, 312792], [16, 4110, 728137], [17, 869, 734728], [18, 2951, 1493848], [19, 16523, 1711830], [20, 45823, 7012867]]]
+    [1455, [[0, 372, 23808], [1, 29, 30688], [2, 247, 33592], [3, 105, 36248], [4, 626, 40064], [5, 2182, 65672], [6, 936, 67392], [7, 1093, 78696], [8, 80, 80544], [9, 1140, 82080], [10, 1223, 88056], [11, 110, 100560], [12, 1, 131240], [13, 3024, 174928], [14, 3, 266744], [15, 3187, 312712], [16, 4110, 729487], [17, 869, 735304], [18, 2952, 1492688], [19, 16517, 1711491], [20, 45818, 7013214]]]
 ] // [];
 const gcs = [
-    [85, 1, 0, 0],
-    [257, 0, 0, 0],
-    [257, 0, 0, 0],
-    [257, 0, 0, 0],
-    [258, 0, 0, 0],
-    [1253, 4, 0, 0],
-    [1255, 2, 6, 0],
-    [1535, 1, 0, 0],
-    [1535, 0, 0, 0],
-    [1535, 0, 0, 0],
-    [1535, 0, 0, 0]
+    [280, 1, 0, 0],
+    [280, 0, 0, 0],
+    [281, 0, 0, 0],
+    [281, 0, 0, 0],
+    [286, 0, 0, 0],
+    [1455, 3, 0, 0],
+    [1459, 3, 6, 0],
+    [1795, 1, 0, 0],
+    [1795, 0, 0, 0],
+    [1796, 0, 0, 0],
+    [1796, 0, 0, 0]
 ] // [];
-const annotations = [[230, "Enter __main__.run"], [242, "helloworld - 1"], [346, "helloworld - 2"], [447, "helloworld - 3"], [547, "helloworld - 4"], [647, "helloworld - 5"], [748, "helloworld - 6"], [848, "helloworld - 7"], [949, "helloworld - 8"], [1049, "helloworld - 9"], [1149, "helloworld - 10"], [1253, "Exit __main__.run"]] // [];
-const programDuration = 1253 // 1;
+const annotations = [[426, "Enter __main__.run"], [426, "helloworld - 1"], [530, "helloworld - 2"], [631, "helloworld - 3"], [736, "helloworld - 4"], [840, "helloworld - 5"], [942, "helloworld - 6"], [1044, "helloworld - 7"], [1148, "helloworld - 8"], [1248, "helloworld - 9"], [1348, "helloworld - 10"], [1455, "Exit __main__.run"]] // [];
+const programDuration = 1455 // 1;
 
 const memoryScores = {};
 const cpuScores = {};

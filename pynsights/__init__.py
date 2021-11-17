@@ -86,7 +86,7 @@ def get_type_index(typename):
 def get_module_index(frame):
     filename = frame.f_code.co_filename
     if not filename in filename_index:
-        mod = frame.f_globals["__name__"] 
+        mod = inspect.getmodule(frame).__name__
         if mod == "__main__":
             mod = pathlib.Path(filename).stem
         record(0, f"{EVENT_MODULE} {mod}\n")
