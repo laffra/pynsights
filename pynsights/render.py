@@ -56,10 +56,11 @@ def flush_call_sites():
     last_call.clear()
 
 MODULES_TO_SKIP = {
-    "importlib",
-    "pynsights",
-    "runpy",
-    "zipimport",
+    "python.importlib",
+    "pynsights.pynsights",
+    "pynsights.pynsights.cli",
+    "python.runpy",
+    "python.zipimport",
 }
 
 def skip_module(moduleIndex):
