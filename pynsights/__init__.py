@@ -20,10 +20,17 @@ from .constants import *
 
 process = psutil.Process(os.getpid())
 
+def get_module(argv):
+    for n, arg in enumerate(argv):
+        if arg == "record" or arg == "render":
+            return argv[n + 1]
+    return argv[0]
+
+
 caller = inspect.stack()[-1]
 if caller[1].endswith("runpy.py"):
-    # prefer sys.argv[0]
-    caller_module = sys.argv[0]
+    # prefer sys.argv[]
+    caller_module = get_module(sys.argv)
     if caller_module.endswith("__main__.py"):
         # use the directory name instead, which is the package name
         caller_module = os.path.dirname(caller_module)
