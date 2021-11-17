@@ -57,6 +57,7 @@ def flush_call_sites():
 
 MODULES_TO_SKIP = {
     "python.importlib",
+    "pynsights",
     "pynsights.pynsights",
     "pynsights.pynsights.cli",
     "python.runpy",

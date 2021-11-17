@@ -186,6 +186,9 @@
                 <option name="low">low</option>
             </select>
 
+            <input type="checkbox" id="python"></input>
+            <label for="python">Python</label>
+
             <input type="checkbox" id="sound"></input>
             <label for="sound">Sound</label>
 
@@ -216,6 +219,7 @@ const settings = {
     level: getPreference("level") || "high",
     full: getPreference("full") == "true",
     sound: getPreference("sound") == "true",
+    python: getPreference("python") == "true",
     focus: getPreference("focus"),
     time: parseInt(getPreference("time") || "0"),
 };
@@ -595,6 +599,11 @@ $("#level")
     .on("change", () => {
         reloadWith("level", $("#level").val());
     });
+$("#python")
+    .prop("checked", settings.python)
+    .on("change", () => {
+        reloadWith("python", $("#python").is(":checked"));
+    });
 $("#sound")
     .prop("checked", settings.sound)
     .on("change", () => {
@@ -666,7 +675,7 @@ function createGraph() {
         graph.postProcessingComposer().addPass(bloomPass);
     }
 
-    const force = settings.level > 1 ? -500 : -200;
+    const force = -100;
     graph.d3Force('charge').strength(settings.full ? 2 * force : force);
     return graph;
 }
@@ -763,6 +772,7 @@ function linkKey(source, target) {
 function inFocus(index) {
     const moduleName = getModuleName(index);
     const focus = new RegExp(settings.focus);
+    if (!settings.python && moduleName.indexOf("python") != -1) return false;
     return moduleName.match(focus);
 }
 
