@@ -179,6 +179,13 @@
             <label >Focus:</label>
             <input id="focus"></input>
 
+            <label for="level">Level:</label>
+            <select id="level">
+                <option name="1">1</label>
+                <option name="2">2</label>
+                <option name="3">3</label>
+            </select>
+
             <input type="checkbox" id="sound"></input>
             <label for="sound">Sound</label>
 
@@ -187,9 +194,6 @@
 
             <input type="checkbox" id="bloom"></input>
             <label for="bloom">Bloom</label>
-
-            <input type="checkbox" id="toplevel"></input>
-            <label for="toplevel">Toplevel</label>
 
             <input type="checkbox" id="counts"></input>
             <label for="counts">Counts</label>
@@ -209,7 +213,7 @@ const settings = {
     counts: getPreference("counts") != "false",
     dots: getPreference("dots") != "false",
     bloom: getPreference("bloom") != "false",
-    toplevel: getPreference("toplevel") == "true",
+    level: getPreference("level") || "1",
     full: getPreference("full") == "true",
     sound: getPreference("sound") == "true",
     focus: getPreference("focus"),
@@ -418,32 +422,6 @@ function indexHeap() {
     }
 }
 
-    
-function addCallToTimeline(call) {
-    const timeline = $("#timeline");
-    const [when, callsiteIndex, count] = call;
-    const x = getX(when);
-    const [sourceIndex, targetIndex] = callsites[callsiteIndex];
-    if (!inFocus(sourceIndex) || !inFocus(targetIndex)) return;
-    const y = getModuleName(sourceIndex).hashCode() % 100;
-    var color = getColor(getGroupName(sourceIndex));
-    const title = "Call from " + 
-        getGroupName(sourceIndex) + "." + getModuleName(sourceIndex) + " to " + 
-        getGroupName(targetIndex) + "." + getModuleName(targetIndex);
-    $("<div>")
-        .attr("module", settings.toplevel ? getGroupName(sourceIndex) : getModuleName(sourceIndex))
-        .addClass("timelinemarker")
-        .css({
-            left: x,
-            top: y,
-            backgroundColor: color,
-        })
-        .hover(function(event) {
-            updateTimelineHover(event, $(this), title);
-        })
-        .appendTo(timeline);
-}
-
 function getX(when) {
     const firstWhen = calls[0][0];
     return Math.round((when - firstWhen) * ($("#timeline").width() - 24) / (programDuration - firstWhen)) + 12;
@@ -612,10 +590,10 @@ $("#focus")
     .on("change", () => {
         reloadWith("focus", $("#focus").val());
     });
-$("#toplevel")
-    .prop("checked", settings.toplevel)
+$("#level")
+    .val(settings.level)
     .on("change", () => {
-        reloadWith("toplevel", $("#toplevel").is(":checked"));
+        reloadWith("level", $("#level").val());
     });
 $("#sound")
     .prop("checked", settings.sound)
@@ -688,7 +666,7 @@ function createGraph() {
         graph.postProcessingComposer().addPass(bloomPass);
     }
 
-    const force = settings.toplevel ? -500 : -200;
+    const force = settings.level > 1 ? -500 : -200;
     graph.d3Force('charge').strength(settings.full ? 2 * force : force);
     return graph;
 }
@@ -730,7 +708,41 @@ function updateLinks() {
 }
 
 function getModuleName(index) {
-    return modulenames[index][settings.toplevel ? 0 : 1];
+    const [groupName, moduleName] = modulenames[index];
+    switch (settings.level) {
+        case "1":
+            return moduleName;
+        case "2":
+            return groupName.split(".").pop();
+        case "3":
+            return groupName;
+    }
+    return "Error in getModuleName: " + settings.level;
+}
+    
+function addCallToTimeline(call) {
+    const timeline = $("#timeline");
+    const [when, callsiteIndex, count] = call;
+    const x = getX(when);
+    const [sourceIndex, targetIndex] = callsites[callsiteIndex];
+    if (!inFocus(sourceIndex) || !inFocus(targetIndex)) return;
+    const y = getModuleName(sourceIndex).hashCode() % 100;
+    var color = getColor(getGroupName(sourceIndex));
+    const title = "Call from " + 
+        getGroupName(sourceIndex) + "." + getModuleName(sourceIndex) + " to " + 
+        getGroupName(targetIndex) + "." + getModuleName(targetIndex);
+    $("<div>")
+        .attr("module", getModuleName(sourceIndex))
+        .addClass("timelinemarker")
+        .css({
+            left: x,
+            top: y,
+            backgroundColor: color,
+        })
+        .hover(function(event) {
+            updateTimelineHover(event, $(this), title);
+        })
+        .appendTo(timeline);
 }
 
 function getGroupName(index) {

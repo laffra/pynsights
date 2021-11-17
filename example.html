@@ -179,6 +179,13 @@
             <label >Focus:</label>
             <input id="focus"></input>
 
+            <label for="level">Level:</label>
+            <select id="level">
+                <option name="1">1</label>
+                <option name="2">2</label>
+                <option name="3">3</label>
+            </select>
+
             <input type="checkbox" id="sound"></input>
             <label for="sound">Sound</label>
 
@@ -187,9 +194,6 @@
 
             <input type="checkbox" id="bloom"></input>
             <label for="bloom">Bloom</label>
-
-            <input type="checkbox" id="toplevel"></input>
-            <label for="toplevel">Toplevel</label>
 
             <input type="checkbox" id="counts"></input>
             <label for="counts">Counts</label>
@@ -209,7 +213,7 @@ const settings = {
     counts: getPreference("counts") != "false",
     dots: getPreference("dots") != "false",
     bloom: getPreference("bloom") != "false",
-    toplevel: getPreference("toplevel") == "true",
+    level: getPreference("level") || "1",
     full: getPreference("full") == "true",
     sound: getPreference("sound") == "true",
     focus: getPreference("focus"),
@@ -279,40 +283,41 @@ const modulenames = [
     ]
 ] // [];
 const callsites = [[1, 0], [0, 2], [2, 3], [3, 4], [2, 4], [0, 5], [5, 6], [6, 4], [4, 6], [4, 3], [6, 7], [7, 6], [6, 8], [6, 9], [5, 7], [7, 8], [7, 9]] // [];
-const calls = [[187, 14, 1], [187, 15, 1], [187, 16, 1], [290, 14, 1], [290, 15, 1], [290, 16, 1], [394, 14, 1], [394, 15, 1], [394, 16, 1], [496, 14, 1], [496, 15, 1], [496, 16, 1], [598, 14, 1], [598, 15, 1], [598, 16, 1], [701, 14, 1], [701, 15, 1], [701, 16, 1], [802, 14, 1], [802, 15, 1], [802, 16, 1], [906, 14, 1], [906, 15, 1], [906, 16, 1], [1010, 14, 1], [1010, 15, 1], [1010, 16, 1], [1114, 14, 1], [1114, 15, 1], [1114, 16, 1]] // [];
-const cpus = [[11, 0.0, 15.8], [787, 2.9, 13.6], [1223, 0.1, 12.0]] // [];
+const calls = [[245, 14, 1], [245, 15, 1], [245, 16, 1], [356, 14, 1], [356, 15, 1], [356, 16, 1], [458, 14, 1], [458, 15, 1], [458, 16, 1], [563, 14, 1], [563, 15, 1], [563, 16, 1], [666, 14, 1], [666, 15, 1], [666, 16, 1], [770, 14, 1], [770, 15, 1], [770, 16, 1], [875, 14, 1], [875, 15, 1], [875, 16, 1], [978, 14, 1], [978, 15, 1], [978, 16, 1], [1082, 14, 1], [1083, 15, 1], [1083, 16, 1], [1187, 14, 1], [1187, 15, 1], [1187, 16, 1]] // [];
+const cpus = [[8, 0.0, 26.8], [806, 3.1, 15.8], [1298, 0.1, 19.5]] // [];
 const memories = [
     [
-        11,
-        22396928.0
+        8,
+        21852160.0
     ],
     [
-        787,
-        26746880.0
+        806,
+        26722304.0
     ],
     [
-        1223,
-        26750976.0
+        1298,
+        26726400.0
     ]
 ] // [];
 const types = ["member_descriptor", "enum.EnumMeta", "function", "frozenset", "getset_descriptor", "int", "method_descriptor", "weakref", "abc.ABCMeta", "builtin_function_or_method", "wrapper_descriptor", "set", "_io.BufferedReader", "tuple", "_io.BufferedWriter", "list", "code", "type", "dict", "str", "Total#Heap#Size#and#Count"] // [];
 const heap = [
-    [1223, [[0, 372, 23808], [1, 29, 30688], [2, 247, 33592], [3, 105, 36248], [4, 626, 40064], [5, 2183, 65700], [6, 936, 67392], [7, 1093, 78696], [8, 80, 80544], [9, 1140, 82080], [10, 1223, 88056], [11, 110, 100560], [12, 1, 131240], [13, 3029, 175208], [14, 3, 266744], [15, 3223, 315520], [16, 4111, 728313], [17, 869, 734728], [18, 2952, 1493952], [19, 16561, 1714767], [20, 45908, 7019676]]]
+    [1298, [[0, 372, 23808], [1, 29, 30688], [2, 247, 33592], [3, 105, 36248], [4, 626, 40064], [5, 2183, 65700], [6, 936, 67392], [7, 1093, 78696], [8, 80, 80544], [9, 1140, 82080], [10, 1223, 88056], [11, 110, 100560], [12, 1, 131240], [13, 3029, 175208], [14, 3, 266744], [15, 3188, 312792], [16, 4111, 728313], [17, 869, 734728], [18, 2951, 1493888], [19, 16532, 1713085], [20, 45843, 7015202]]]
 ] // [];
 const gcs = [
-    [282, 1, 0, 0],
-    [282, 0, 0, 0],
-    [282, 0, 0, 0],
-    [283, 1, 0, 0],
-    [1223, 4, 0, 0],
-    [1228, 4, 6, 0],
-    [1542, 1, 0, 0],
-    [1542, 0, 0, 0],
-    [1543, 0, 0, 0],
-    [1543, 0, 0, 0]
+    [78, 3, 0, 0],
+    [301, 0, 0, 0],
+    [301, 0, 0, 0],
+    [302, 1, 0, 0],
+    [302, 0, 0, 0],
+    [1297, 6, 0, 0],
+    [1302, 4, 6, 0],
+    [1698, 2, 0, 0],
+    [1698, 0, 0, 0],
+    [1699, 0, 0, 0],
+    [1702, 0, 0, 0]
 ] // [];
-const annotations = [[181, "Enter __main__.run"], [187, "helloworld - 1"], [290, "helloworld - 2"], [394, "helloworld - 3"], [496, "helloworld - 4"], [598, "helloworld - 5"], [701, "helloworld - 6"], [802, "helloworld - 7"], [906, "helloworld - 8"], [1009, "helloworld - 9"], [1114, "helloworld - 10"], [1223, "Exit __main__.run"]] // [];
-const programDuration = 1223 // 1;
+const annotations = [[234, "Enter __main__.run"], [245, "helloworld - 1"], [356, "helloworld - 2"], [458, "helloworld - 3"], [563, "helloworld - 4"], [665, "helloworld - 5"], [770, "helloworld - 6"], [875, "helloworld - 7"], [978, "helloworld - 8"], [1082, "helloworld - 9"], [1187, "helloworld - 10"], [1297, "Exit __main__.run"]] // [];
+const programDuration = 1297 // 1;
 
 const memoryScores = {};
 const cpuScores = {};
@@ -493,32 +498,6 @@ function indexHeap() {
     }
 }
 
-    
-function addCallToTimeline(call) {
-    const timeline = $("#timeline");
-    const [when, callsiteIndex, count] = call;
-    const x = getX(when);
-    const [sourceIndex, targetIndex] = callsites[callsiteIndex];
-    if (!inFocus(sourceIndex) || !inFocus(targetIndex)) return;
-    const y = getModuleName(sourceIndex).hashCode() % 100;
-    var color = getColor(getGroupName(sourceIndex));
-    const title = "Call from " + 
-        getGroupName(sourceIndex) + "." + getModuleName(sourceIndex) + " to " + 
-        getGroupName(targetIndex) + "." + getModuleName(targetIndex);
-    $("<div>")
-        .attr("module", settings.toplevel ? getGroupName(sourceIndex) : getModuleName(sourceIndex))
-        .addClass("timelinemarker")
-        .css({
-            left: x,
-            top: y,
-            backgroundColor: color,
-        })
-        .hover(function(event) {
-            updateTimelineHover(event, $(this), title);
-        })
-        .appendTo(timeline);
-}
-
 function getX(when) {
     const firstWhen = calls[0][0];
     return Math.round((when - firstWhen) * ($("#timeline").width() - 24) / (programDuration - firstWhen)) + 12;
@@ -687,10 +666,10 @@ $("#focus")
     .on("change", () => {
         reloadWith("focus", $("#focus").val());
     });
-$("#toplevel")
-    .prop("checked", settings.toplevel)
+$("#level")
+    .val(settings.level)
     .on("change", () => {
-        reloadWith("toplevel", $("#toplevel").is(":checked"));
+        reloadWith("level", $("#level").val());
     });
 $("#sound")
     .prop("checked", settings.sound)
@@ -763,7 +742,7 @@ function createGraph() {
         graph.postProcessingComposer().addPass(bloomPass);
     }
 
-    const force = settings.toplevel ? -500 : -200;
+    const force = settings.level > 1 ? -500 : -200;
     graph.d3Force('charge').strength(settings.full ? 2 * force : force);
     return graph;
 }
@@ -805,7 +784,41 @@ function updateLinks() {
 }
 
 function getModuleName(index) {
-    return modulenames[index][settings.toplevel ? 0 : 1];
+    const [groupName, moduleName] = modulenames[index];
+    switch (settings.level) {
+        case "1":
+            return moduleName;
+        case "2":
+            return groupName.split(".").pop();
+        case "3":
+            return groupName;
+    }
+    return "Error in getModuleName: " + settings.level;
+}
+    
+function addCallToTimeline(call) {
+    const timeline = $("#timeline");
+    const [when, callsiteIndex, count] = call;
+    const x = getX(when);
+    const [sourceIndex, targetIndex] = callsites[callsiteIndex];
+    if (!inFocus(sourceIndex) || !inFocus(targetIndex)) return;
+    const y = getModuleName(sourceIndex).hashCode() % 100;
+    var color = getColor(getGroupName(sourceIndex));
+    const title = "Call from " + 
+        getGroupName(sourceIndex) + "." + getModuleName(sourceIndex) + " to " + 
+        getGroupName(targetIndex) + "." + getModuleName(targetIndex);
+    $("<div>")
+        .attr("module", getModuleName(sourceIndex))
+        .addClass("timelinemarker")
+        .css({
+            left: x,
+            top: y,
+            backgroundColor: color,
+        })
+        .hover(function(event) {
+            updateTimelineHover(event, $(this), title);
+        })
+        .appendTo(timeline);
 }
 
 function getGroupName(index) {
