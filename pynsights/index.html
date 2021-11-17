@@ -179,11 +179,11 @@
             <label >Focus:</label>
             <input id="focus"></input>
 
-            <label for="level">Level:</label>
+            <label for="level">Detail:</label>
             <select id="level">
-                <option name="1">1</label>
-                <option name="2">2</label>
-                <option name="3">3</label>
+                <option name="high">high</label>
+                <option name="medium"></option>medium</label>
+                <option name="low">low</label>
             </select>
 
             <input type="checkbox" id="sound"></input>
@@ -213,7 +213,7 @@ const settings = {
     counts: getPreference("counts") != "false",
     dots: getPreference("dots") != "false",
     bloom: getPreference("bloom") != "false",
-    level: getPreference("level") || "1",
+    level: getPreference("level") || "high",
     full: getPreference("full") == "true",
     sound: getPreference("sound") == "true",
     focus: getPreference("focus"),
@@ -707,19 +707,30 @@ function updateLinks() {
     liveLinks = {};
 }
 
-function getModuleName(index) {
-    const [groupName, moduleName] = modulenames[index];
-    switch (settings.level) {
-        case "1":
-            return moduleName;
-        case "2":
-            return groupName.split(".").pop();
-        case "3":
-            return groupName;
-    }
-    return "Error in getModuleName: " + settings.level;
+function getGroupName(index) {
+    const name = modulenames[index];
+    const parts = name.split(".");
+    parts.pop();
+    return parts.join(".");
 }
-    
+
+function getModuleName(index) {
+    const name = modulenames[index];
+    // assume module name is "one.two.three.four"
+    const parts = name.split(".");
+    switch (settings.level) {
+        case "high":
+            return parts.join(".");   // return "one.two.three.four"
+        case "medium":
+            if (parts.length > 1) parts.pop();
+            return parts.join(".");   // return "one.two.three"
+        case "low":
+            if (parts.length > 1) parts.pop();
+            if (parts.length > 1) parts.pop();
+            return parts.join(".");   // return "one.two"
+    }
+}
+
 function addCallToTimeline(call) {
     const timeline = $("#timeline");
     const [when, callsiteIndex, count] = call;
@@ -745,28 +756,22 @@ function addCallToTimeline(call) {
         .appendTo(timeline);
 }
 
-function getGroupName(index) {
-    return modulenames[index][0];
-}
-
 function linkKey(source, target) {
     return `${source}>${target}`;
 }
 
 function inFocus(index) {
     const moduleName = getModuleName(index);
-    const groupName = getGroupName(index);
     const focus = new RegExp(settings.focus);
-    return groupName.match(focus) || moduleName.match(focus);
+    return moduleName.match(focus);
 }
 
 function addNode(index) {
     const moduleName = getModuleName(index);
-    const groupName = getGroupName(index);
     if (!nodeMap[moduleName]) {
         newNodes[moduleName] = nodeMap[moduleName] = {
-            group: groupName, 
-            id: settings.full ? `${groupName}.${moduleName}` : moduleName,
+            id: settings.full ? `${moduleName}` : moduleName.split(".").pop(),
+            group: getGroupName(index)
         };
     }
     return nodeMap[moduleName];

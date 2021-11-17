@@ -56,11 +56,11 @@ def flush_call_sites():
     last_call.clear()
 
 MODULES_TO_SKIP = {
-    ("lib", "runpy"),
-    ("lib", "pkgutil"),
-    ("<builtin>", "zipimport"),
-    ("<builtin>", "importlib"),
-    ("pynsights.pynsights", "cli"),
+    "importlib._bootstrap_external",
+    "importlib._bootstrap",
+    "pynsights",
+    "runpy",
+    "zipimport",
 }
 
 def skip_module(moduleIndex):
@@ -89,10 +89,8 @@ def handle_line(line):
     items = line[:-1].split()
     kind = int(items[0])
     if kind == EVENT_MODULE:
-        _, parent, module = items
-        if module == "__init__":
-            module = parent
-        modulenames.append((parent, module))
+        _, module = items
+        modulenames.append(module)
     elif kind == EVENT_CPU:
         cpu, cpu_system = float(items[1]), float(items[2])
         cpus.append((when, cpu, cpu_system))
@@ -139,7 +137,7 @@ def generate(output):
         template = fin.read()
     html = template\
         .replace("/*DURATION*/", str(duration) + " //") \
-        .replace("/*MODULENAMES*/", json.dumps(modulenames, indent=4) + " //") \
+        .replace("/*MODULENAMES*/", json.dumps(modulenames) + " //") \
         .replace("/*CALLSITES*/", json.dumps(callsites) + " //") \
         .replace("/*CALLS*/", json.dumps(calls) + " //") \
         .replace("/*CPUS*/", json.dumps(cpus) + " //") \

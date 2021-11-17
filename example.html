@@ -179,11 +179,11 @@
             <label >Focus:</label>
             <input id="focus"></input>
 
-            <label for="level">Level:</label>
+            <label for="level">Detail:</label>
             <select id="level">
-                <option name="1">1</label>
-                <option name="2">2</label>
-                <option name="3">3</label>
+                <option name="high">high</label>
+                <option name="medium"></option>medium</label>
+                <option name="low">low</label>
             </select>
 
             <input type="checkbox" id="sound"></input>
@@ -213,7 +213,7 @@ const settings = {
     counts: getPreference("counts") != "false",
     dots: getPreference("dots") != "false",
     bloom: getPreference("bloom") != "false",
-    level: getPreference("level") || "1",
+    level: getPreference("level") || "high",
     full: getPreference("full") == "true",
     sound: getPreference("sound") == "true",
     focus: getPreference("focus"),
@@ -232,92 +232,43 @@ var playIndex = settings.time;
 var timelineMarkerCount = 0;
 var paused = false;
 
-const modulenames = [
-    [
-        "lib",
-        "runpy"
-    ],
-    [
-        "pynsights.pynsights",
-        "cli"
-    ],
-    [
-        "lib",
-        "pkgutil"
-    ],
-    [
-        "<builtin>",
-        "zipimport"
-    ],
-    [
-        "<builtin>",
-        "importlib"
-    ],
-    [
-        "example",
-        "example"
-    ],
-    [
-        "<builtin>",
-        "importlib"
-    ],
-    [
-        "pynsights.hello",
-        "helloworld"
-    ],
-    [
-        "pynsights.hello",
-        "hello"
-    ],
-    [
-        "pynsights.hello",
-        "world"
-    ],
-    [
-        "lib",
-        "functools"
-    ],
-    [
-        "lib",
-        "threading"
-    ]
-] // [];
-const callsites = [[1, 0], [0, 2], [2, 3], [3, 4], [2, 4], [0, 5], [5, 6], [6, 4], [4, 6], [4, 3], [6, 7], [7, 6], [6, 8], [6, 9], [5, 7], [7, 8], [7, 9]] // [];
-const calls = [[245, 14, 1], [245, 15, 1], [245, 16, 1], [356, 14, 1], [356, 15, 1], [356, 16, 1], [458, 14, 1], [458, 15, 1], [458, 16, 1], [563, 14, 1], [563, 15, 1], [563, 16, 1], [666, 14, 1], [666, 15, 1], [666, 16, 1], [770, 14, 1], [770, 15, 1], [770, 16, 1], [875, 14, 1], [875, 15, 1], [875, 16, 1], [978, 14, 1], [978, 15, 1], [978, 16, 1], [1082, 14, 1], [1083, 15, 1], [1083, 16, 1], [1187, 14, 1], [1187, 15, 1], [1187, 16, 1]] // [];
-const cpus = [[8, 0.0, 26.8], [806, 3.1, 15.8], [1298, 0.1, 19.5]] // [];
+const modulenames = ["runpy", "pynsights.cli", "pkgutil", "zipimport", "importlib._bootstrap_external", "pynsights", "example", "importlib._bootstrap", "hello.helloworld", "hello.hello", "hello.world", "functools", "threading"] // [];
+const callsites = [[1, 0], [0, 2], [2, 3], [3, 4], [2, 4], [0, 5], [0, 6], [6, 7], [7, 4], [4, 7], [4, 3], [7, 8], [8, 7], [7, 9], [7, 10], [6, 5], [5, 11], [5, 6], [6, 8], [8, 9], [8, 10], [1, 5], [5, 12]] // [];
+const calls = [[242, 18, 1], [242, 19, 1], [242, 20, 1], [346, 18, 1], [346, 19, 1], [346, 20, 1], [447, 18, 1], [447, 19, 1], [447, 20, 1], [547, 18, 1], [547, 19, 1], [547, 20, 1], [647, 18, 1], [647, 19, 1], [647, 20, 1], [748, 18, 1], [748, 19, 1], [748, 20, 1], [848, 18, 1], [848, 19, 1], [848, 20, 1], [949, 18, 1], [949, 19, 1], [949, 20, 1], [1049, 18, 1], [1049, 19, 1], [1049, 20, 1], [1149, 18, 1], [1149, 19, 1], [1149, 20, 1]] // [];
+const cpus = [[8, 0.0, 14.4], [763, 2.8, 10.8], [1253, 0.1, 9.9]] // [];
 const memories = [
     [
         8,
-        21852160.0
+        21762048.0
     ],
     [
-        806,
-        26722304.0
+        763,
+        26943488.0
     ],
     [
-        1298,
-        26726400.0
+        1253,
+        26943488.0
     ]
 ] // [];
 const types = ["member_descriptor", "enum.EnumMeta", "function", "frozenset", "getset_descriptor", "int", "method_descriptor", "weakref", "abc.ABCMeta", "builtin_function_or_method", "wrapper_descriptor", "set", "_io.BufferedReader", "tuple", "_io.BufferedWriter", "list", "code", "type", "dict", "str", "Total#Heap#Size#and#Count"] // [];
 const heap = [
-    [1298, [[0, 372, 23808], [1, 29, 30688], [2, 247, 33592], [3, 105, 36248], [4, 626, 40064], [5, 2183, 65700], [6, 936, 67392], [7, 1093, 78696], [8, 80, 80544], [9, 1140, 82080], [10, 1223, 88056], [11, 110, 100560], [12, 1, 131240], [13, 3029, 175208], [14, 3, 266744], [15, 3188, 312792], [16, 4111, 728313], [17, 869, 734728], [18, 2951, 1493888], [19, 16532, 1713085], [20, 45843, 7015202]]]
+    [1253, [[0, 372, 23808], [1, 29, 30688], [2, 247, 33592], [3, 105, 36248], [4, 626, 40064], [5, 2182, 65672], [6, 936, 67392], [7, 1093, 78696], [8, 80, 80544], [9, 1140, 82080], [10, 1223, 88056], [11, 110, 100560], [12, 1, 131240], [13, 3024, 174928], [14, 3, 266744], [15, 3187, 312792], [16, 4110, 728137], [17, 869, 734728], [18, 2951, 1493848], [19, 16523, 1711830], [20, 45823, 7012867]]]
 ] // [];
 const gcs = [
-    [78, 3, 0, 0],
-    [301, 0, 0, 0],
-    [301, 0, 0, 0],
-    [302, 1, 0, 0],
-    [302, 0, 0, 0],
-    [1297, 6, 0, 0],
-    [1302, 4, 6, 0],
-    [1698, 2, 0, 0],
-    [1698, 0, 0, 0],
-    [1699, 0, 0, 0],
-    [1702, 0, 0, 0]
+    [85, 1, 0, 0],
+    [257, 0, 0, 0],
+    [257, 0, 0, 0],
+    [257, 0, 0, 0],
+    [258, 0, 0, 0],
+    [1253, 4, 0, 0],
+    [1255, 2, 6, 0],
+    [1535, 1, 0, 0],
+    [1535, 0, 0, 0],
+    [1535, 0, 0, 0],
+    [1535, 0, 0, 0]
 ] // [];
-const annotations = [[234, "Enter __main__.run"], [245, "helloworld - 1"], [356, "helloworld - 2"], [458, "helloworld - 3"], [563, "helloworld - 4"], [665, "helloworld - 5"], [770, "helloworld - 6"], [875, "helloworld - 7"], [978, "helloworld - 8"], [1082, "helloworld - 9"], [1187, "helloworld - 10"], [1297, "Exit __main__.run"]] // [];
-const programDuration = 1297 // 1;
+const annotations = [[230, "Enter __main__.run"], [242, "helloworld - 1"], [346, "helloworld - 2"], [447, "helloworld - 3"], [547, "helloworld - 4"], [647, "helloworld - 5"], [748, "helloworld - 6"], [848, "helloworld - 7"], [949, "helloworld - 8"], [1049, "helloworld - 9"], [1149, "helloworld - 10"], [1253, "Exit __main__.run"]] // [];
+const programDuration = 1253 // 1;
 
 const memoryScores = {};
 const cpuScores = {};
@@ -783,19 +734,30 @@ function updateLinks() {
     liveLinks = {};
 }
 
-function getModuleName(index) {
-    const [groupName, moduleName] = modulenames[index];
-    switch (settings.level) {
-        case "1":
-            return moduleName;
-        case "2":
-            return groupName.split(".").pop();
-        case "3":
-            return groupName;
-    }
-    return "Error in getModuleName: " + settings.level;
+function getGroupName(index) {
+    const name = modulenames[index];
+    const parts = name.split(".");
+    parts.pop();
+    return parts.join(".");
 }
-    
+
+function getModuleName(index) {
+    const name = modulenames[index];
+    // assume module name is "one.two.three.four"
+    const parts = name.split(".");
+    switch (settings.level) {
+        case "high":
+            return parts.join(".");   // return "one.two.three.four"
+        case "medium":
+            if (parts.length > 1) parts.pop();
+            return parts.join(".");   // return "one.two.three"
+        case "low":
+            if (parts.length > 1) parts.pop();
+            if (parts.length > 1) parts.pop();
+            return parts.join(".");   // return "one.two"
+    }
+}
+
 function addCallToTimeline(call) {
     const timeline = $("#timeline");
     const [when, callsiteIndex, count] = call;
@@ -821,28 +783,22 @@ function addCallToTimeline(call) {
         .appendTo(timeline);
 }
 
-function getGroupName(index) {
-    return modulenames[index][0];
-}
-
 function linkKey(source, target) {
     return `${source}>${target}`;
 }
 
 function inFocus(index) {
     const moduleName = getModuleName(index);
-    const groupName = getGroupName(index);
     const focus = new RegExp(settings.focus);
-    return groupName.match(focus) || moduleName.match(focus);
+    return moduleName.match(focus);
 }
 
 function addNode(index) {
     const moduleName = getModuleName(index);
-    const groupName = getGroupName(index);
     if (!nodeMap[moduleName]) {
         newNodes[moduleName] = nodeMap[moduleName] = {
-            group: groupName, 
-            id: settings.full ? `${groupName}.${moduleName}` : moduleName,
+            id: settings.full ? `${moduleName}` : moduleName.split(".").pop(),
+            group: getGroupName(index)
         };
     }
     return nodeMap[moduleName];

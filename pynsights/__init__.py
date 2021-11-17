@@ -48,10 +48,7 @@ callsite_index = {}
 type_index = {}
 lock = threading.Lock()
 buffer = []
-MAX_BUFFER_SIZE = 1000
 call_count = 0
-PATHSEP = re.compile(r"[/\\]")
-PYTHONRUNTIME = re.compile(r".*python[0-9.]+$")
 start = time.time()
 last_flush = 0
 FLUSH_INTERVAL = 1.0
@@ -89,9 +86,10 @@ def get_type_index(typename):
 def get_module_index(frame):
     filename = frame.f_code.co_filename
     if not filename in filename_index:
-        record(0, "%s %s\n" % (
-            EVENT_MODULE,
-            get_group_and_module(filename)))
+        mod = frame.f_globals["__name__"] 
+        if mod == "__main__":
+            mod = pathlib.Path(filename).stem
+        record(0, f"{EVENT_MODULE} {mod}\n")
         filename_index[filename] = len(filename_index)
     return filename_index[filename]
 
@@ -105,27 +103,6 @@ def get_callsite_index(source, target):
             target))
         callsite_index[callsite] = len(callsite_index)
     return callsite_index[callsite]
-
-
-def get_group_and_module(filename):
-    if filename in group_module_map:
-        return group_module_map[filename]
-    parts = re.split(PATHSEP, filename)
-    parts[-1] = pathlib.Path(parts[-1]).stem
-    if len(parts) == 1:
-        basename = parts[0]
-        if basename.startswith("<frozen "):
-            parts = ["<builtin>", parts[0].replace("<frozen ", "").replace(">", "")]
-        else:
-            parts = [parts[0], parts[0]]
-    group = ".".join(part for part in parts[-3:-1] if part != "site-packages" and not re.match(PYTHONRUNTIME, part))
-    if not group or re.match(PYTHONRUNTIME, group):
-        group = "<builtin>"
-    module = parts[-1].replace("__init__", group)
-    if module == "pynsights.pynsights":
-        raise SkipCall("skip pynsights calls")
-    group_module_map[filename] = group, module
-    return f"{group} {module}"
 
 
 def extract_call(frame):
