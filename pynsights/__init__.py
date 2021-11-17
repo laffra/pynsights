@@ -98,7 +98,8 @@ def get_module_from_filename(filename):
         if not os.path.exists(os.path.join(path, "__init__.py")): # not a module
             break
     name = path.name or pathlib.Path(os.getcwd()).name
-    parts.insert(0, re.sub("python[0-9.]*", "python", name))
+    if name != "site-packages":
+        parts.insert(0, re.sub("python[0-9.]*", "python", name))
     return ".".join(parts)
     
 
