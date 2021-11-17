@@ -51,19 +51,19 @@ def flush_call_sites():
         calls.append((when, callsite, count))
     last_call.clear()
 
-def is_bootstrap_module(moduleIndex):
+def skip_module(moduleIndex):
     if moduleIndex < len(modulenames):
         group, module = modulenames[moduleIndex]
-        return group in ["bootstrap"] or module in ["runpy", "pkgutil"]
+        return group in ["<builtin>", "pynsights.pynsights"] or module in ["runpy", "pkgutil"]
 
-def is_bootstrap_call(callsite):
-    if not calls and callsite < len(callsites):
+def skip_call(callsite):
+    if callsite < len(callsites):
         source, target = callsites[callsite]
-        return is_bootstrap_module(source) or is_bootstrap_module(target)
+        return skip_module(source) or skip_module(target)
         
 def add_call(when, callsite):
     global total_calls
-    if is_bootstrap_call(callsite):
+    if skip_call(callsite):
         return
     total_calls += 1
     count = 0
@@ -139,7 +139,7 @@ def generate(output):
         .replace("/*MEMORIES*/", json.dumps(memories, indent=4) + " //")
     with open(output, "w") as fout:
         fout.write(html)
-    print("Rendered output saved in", output)
+    print("Rendered output has been saved in", output)
 
 
 def open_ui(output):

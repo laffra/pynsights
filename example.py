@@ -4,7 +4,7 @@
 import pynsights
 
 #
-# Pynsights uses sys.settrace, which traces all Python calls.
+# Pynsights uses sys.setprofile, which traces all Python calls.
 # Note that builtin functions (implemented in C) are not traced.
 # Therefore, the calls to time, os, and sys below are not traced.
 # All the calls to the helloworld module are actually traced.
@@ -21,17 +21,21 @@ import pynsights
 
 import pynsights
 from hello.helloworld import helloworld
+import gc
 import time
 
 @pynsights.trace
 def run():
+    print("-" * 50)
+    print("Example: Run Hello World")
     for n in range(1, 11):
-        time.sleep(0.2)
         pynsights.annotate("helloworld - %d" % n)
-        print(10 - n)
         helloworld()  
-        import gc
-        gc.collect()
+        print(f"\rExample: Run Hello World - {10 - n}", end="")
+        time.sleep(0.1)
+    gc.collect()
+    print("\nExample: Done.")
+    print("-" * 50)
 
 
 if __name__ == "__main__":
