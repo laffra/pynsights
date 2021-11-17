@@ -3,57 +3,75 @@
 """
 
 import json
+import pathlib
 import webbrowser
+import os
 from pynsights.constants import *
 
 modulenames = []
 typenames = []
 callsites = []
 calls = []
+total_calls = 0
 cpus = []
 heap = []
 gcs = []
 memories = []
 annotations = []
 duration = 0
-lastCall = {}
+last_call = {}
 when = 0
 
-template_file = __file__.replace("view.py", "index.html")
+template_file = __file__.replace("render.py", "index.html")
 
 
 def show_progress(percent, end=""):
-    print(f"\rPynsights: rendering, {percent}% done", end=end)
+    print(f"\r{percent}% done - {total_calls} calls processed", end=end)
 
 
 def read_dump(input_file):
     done = 0
+    print(f"Loading {input_file}")
+    print(f"Dump size: {os.path.getsize(input_file)} bytes.")
     with open(input_file) as fp:
         lines = fp.readlines()
         one_percent = round(len(lines) / 100)
         for n, line in enumerate(lines):
             handle_line(line)
             if not one_percent or n % one_percent == 0:
-                if done % 10 == 0:
-                    show_progress(done)
+                show_progress(done)
                 done += 1
-        flushCallSites()
-    show_progress(100, "\n")
+        flush_call_sites()
+    print(f"\rThis trace contains {total_calls} calls.")
 
 
-def flushCallSites():
-    for callsite in lastCall:
-        when, count = lastCall[callsite]
+def flush_call_sites():
+    for callsite in last_call:
+        when, count = last_call[callsite]
         calls.append((when, callsite, count))
-    lastCall.clear()
+    last_call.clear()
 
-def addCall(when, callsite):
+def is_bootstrap_module(moduleIndex):
+    if moduleIndex < len(modulenames):
+        group, module = modulenames[moduleIndex]
+        return group in ["bootstrap"] or module in ["runpy", "pkgutil"]
+
+def is_bootstrap_call(callsite):
+    if not calls and callsite < len(callsites):
+        source, target = callsites[callsite]
+        return is_bootstrap_module(source) or is_bootstrap_module(target)
+        
+def add_call(when, callsite):
+    global total_calls
+    if is_bootstrap_call(callsite):
+        return
+    total_calls += 1
     count = 0
-    if callsite in lastCall:
-        lastWhen, count = lastCall[callsite]
+    if callsite in last_call:
+        lastWhen, count = last_call[callsite]
         if when - lastWhen > 500:
             calls.append((lastWhen, callsite, count))
-    lastCall[callsite] = when, count + 1
+    last_call[callsite] = when, count + 1
 
 def handle_line(line):
     global duration, when
@@ -84,28 +102,28 @@ def handle_line(line):
         callsites.append(callsite)
     elif kind == EVENT_CALL:
         callsite = int(items[1])
-        addCall(when, callsite)
+        add_call(when, callsite)
         duration = when
     elif kind == EVENT_ANNOTATE:
         message = " ".join(items[1:])
         annotations.append((when, message))
         duration = when
-        flushCallSites()
+        flush_call_sites()
     elif kind == EVENT_ENTER:
         message = " ".join(items[1:])
-        annotations.append((when, "Enter %s" % message))
+        annotations.append((when, f"Enter {message}"))
         duration = when
-        flushCallSites()
+        flush_call_sites()
     elif kind == EVENT_EXIT:
         message = " ".join(items[1:])
-        annotations.append((when, "Exit %s" % message))
+        annotations.append((when, f"Exit {message}"))
         duration = when
-        flushCallSites()
+        flush_call_sites()
     elif kind == EVENT_TIMESTAMP:
         when = int(items[1])
 
 
-def render(output):
+def generate(output):
     with open(template_file) as fin:
         template = fin.read()
     html = template\
@@ -121,6 +139,7 @@ def render(output):
         .replace("/*MEMORIES*/", json.dumps(memories, indent=4) + " //")
     with open(output, "w") as fout:
         fout.write(html)
+    print("Rendered output saved in", output)
 
 
 def open_ui(output):
@@ -128,10 +147,10 @@ def open_ui(output):
     webbrowser.open("file://" + str(output.resolve()))
 
 
-def view(input_file, output=None, open_browser=False):
+def render(input_file, output=None, open_browser=False):
     read_dump(input_file)
     if output is None:
         output = input_file.with_suffix(".html")
-    render(output)
+    generate(output)
     if open_browser:
-        open_ui(output)
+        open_ui(pathlib.Path(output))

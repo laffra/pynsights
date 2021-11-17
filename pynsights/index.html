@@ -316,7 +316,11 @@ function addCallsToTimeline(index) {
     var markersToAdd = 21;
     while (index < end) {
         if (markersToAdd-- > 0) {
-            addCallToTimeline(calls[index]);
+            try {
+                addCallToTimeline(calls[index]);
+            } catch(e) {
+                console.log("Cannot add call", index, calls.length, e);
+            }
         }
         const lastWhen = calls[index++][0];
         while (index < end && calls[index][0] < lastWhen + 100) {

@@ -21,7 +21,7 @@ from pathlib import Path
 from runpy import run_module, run_path
 
 from pynsights import Recorder
-from pynsights.view import view
+from pynsights.render import render
 
 
 def get_parser() -> argparse.ArgumentParser:
@@ -65,8 +65,8 @@ def get_parser() -> argparse.ArgumentParser:
     return parser
 
 
-def record(command, output=None):
-    module = command[1] if command[0] == "-m" else command[0]
+def do_record(command, output=None):
+    module = command[0]
     if Path(module).exists():
         runpy = run_path
     else:
@@ -78,16 +78,16 @@ def record(command, output=None):
             runpy(module, run_name="__main__")
 
 
-def render(input_file, output_file, open_browser):
-    view(input_file, output_file, open_browser)
+def do_render(input_file, output_file, open_browser):
+    render(input_file, output_file, open_browser)
 
 
-def run(command, output=None, open_browser=False):
+def do_run(command, output=None, open_browser=False):
     tmpname = Path(command[0]).stem
     with tempfile.TemporaryDirectory() as tmpdir:
         data_file = Path(tmpdir, f"{tmpname}.txt")
-        record(command, output=data_file)
-        render(data_file, output or f"{tmpname}.html", open_browser)
+        do_record(command, output=data_file)
+        do_render(data_file, output or f"{tmpname}.html", open_browser)
 
 
 def main(args: list[str] | None = None) -> int:
@@ -106,15 +106,15 @@ def main(args: list[str] | None = None) -> int:
     opts = parser.parse_args(args)
 
     if opts.command == "record":
-        record(opts.record_command, opts.output)
+        do_record(opts.record_command, opts.output)
         return 0
     
     if opts.command == "render":
-        render(opts.input_file, opts.output, opts.browser)
+        do_render(opts.input_file, opts.output, opts.browser)
         return 0
 
     if opts.command == "run":
-        run(opts.record_command, opts.output, opts.browser)
+        do_run(opts.record_command, opts.output, opts.browser)
         return 0
     
     if opts.command:
