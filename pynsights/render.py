@@ -52,8 +52,8 @@ def flush_call_sites():
     last_call.clear()
 
 MODULES_TO_SKIP = {
-    ("<builtin>", "runpy"),
-    ("<builtin>", "pkgutil"),
+    ("lib", "runpy"),
+    ("lib", "pkgutil"),
     ("<builtin>", "zipimport"),
     ("<builtin>", "importlib"),
     ("pynsights.pynsights", "cli"),

@@ -118,7 +118,7 @@ def get_group_and_module(filename):
             parts = ["<builtin>", parts[0].replace("<frozen ", "").replace(">", "")]
         else:
             parts = [parts[0], parts[0]]
-    group = ".".join(parts[-3:-1])
+    group = ".".join(part for part in parts[-3:-1] if part != "site-packages" and not re.match(PYTHONRUNTIME, part))
     if re.match(PYTHONRUNTIME, group):
         group = "<builtin>"
     module = parts[-1].replace("__init__", group)
