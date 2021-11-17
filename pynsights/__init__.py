@@ -119,7 +119,7 @@ def get_group_and_module(filename):
         else:
             parts = [parts[0], parts[0]]
     group = ".".join(part for part in parts[-3:-1] if part != "site-packages" and not re.match(PYTHONRUNTIME, part))
-    if re.match(PYTHONRUNTIME, group):
+    if not group or re.match(PYTHONRUNTIME, group):
         group = "<builtin>"
     module = parts[-1].replace("__init__", group)
     if module == "pynsights.pynsights":
