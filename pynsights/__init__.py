@@ -106,7 +106,6 @@ def get_module_index(frame):
     filename = frame.f_code.co_filename
     if not filename in filename_index:
         mod = get_module_from_filename(filename)
-        print("module", mod, filename)
         if mod == "__main__":
             mod = pathlib.Path(filename).stem
         record(0, f"{EVENT_MODULE} {mod}\n")
