@@ -86,7 +86,16 @@ def get_type_index(typename):
 def get_module_index(frame):
     filename = frame.f_code.co_filename
     if not filename in filename_index:
-        mod = inspect.getmodule(frame).__name__
+        parts = []
+        path = pathlib.Path(filename)
+        while path:
+            name = path.stem.replace("<frozen ", "").replace(">", "")
+            if name != "__init__":
+                parts.insert(0, name)
+            path = path.parent
+            if not os.path.exists(os.path.join(path, "__init__.py")): # not a module
+                break
+        mod = ".".join(parts)
         if mod == "__main__":
             mod = pathlib.Path(filename).stem
         record(0, f"{EVENT_MODULE} {mod}\n")

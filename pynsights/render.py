@@ -56,8 +56,7 @@ def flush_call_sites():
     last_call.clear()
 
 MODULES_TO_SKIP = {
-    "importlib._bootstrap_external",
-    "importlib._bootstrap",
+    "importlib",
     "pynsights",
     "runpy",
     "zipimport",
