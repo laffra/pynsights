@@ -101,6 +101,11 @@
             color: orange;
             border-width: 0;
         }
+        #timelinehover {
+            font-size: 20px;
+            font-family: Arial, Helvetica, sans-serif;
+            background-color: black;
+        }
         table {
             border-collapse: collapse; 
         }
@@ -152,12 +157,6 @@
             height: 100%;
             border: 0px solid rgb(85, 85, 85);
             border-left-width: 1px;
-        }
-        .timelinemarker:hover {
-            position: absolute;
-            width: 12px;
-            height: 12px;
-            border-radius: 6px;
         }
     </style>
     <body>
@@ -326,17 +325,40 @@ function addCallsToTimeline(index) {
     while (index < end) {
         if (markersToAdd-- > 0) {
             try {
-                addCallToTimeline(calls[index]);
+                addCallToTimeline(calls[index], index);
             } catch(e) {
                 console.log("Cannot add call", index, calls.length, e);
             }
         }
         const lastWhen = calls[index++][0];
-        while (index < end && calls[index][0] < lastWhen + 100) {
-            index += 1;
-        }
+        index += 1;
     }
     setTimeout(function() { addCallsToTimeline(index); }, 1);
+}
+
+function zoomToModule(name) {
+    console.log("zoom to module", name);
+    for (const node of graphData.nodes) {
+        console.log("   ?", node.name);
+        if (node.name == name) {
+            zoomToNode(node);
+            break;
+        }
+    }
+}
+
+function zoomToNode(node) {
+    console.log("zoom to node", node);
+
+    // Aim at node from outside it
+    const distance = 400;
+    const distRatio = 1 + distance/Math.hypot(node.x, node.y, node.z);
+
+    Graph.cameraPosition(
+        { x: node.x * distRatio, y: node.y * distRatio, z: node.z * distRatio }, // new position
+        node, // lookAt ({ x, y, z })
+        1500  // ms transition duration
+    );
 }
 
 function drawTimelineChartLine(context, x1, y1, x2, y2, color) {
@@ -467,7 +489,7 @@ function annotateTimelineMarker(annotation) {
             left: getX(when) + 4,
             top: y,
         })
-        .text(`${when} ${getX(when)} ${message}`)
+        .text(`${message}`)
         .appendTo(timeline);
 }
 
@@ -523,7 +545,7 @@ $("#timelinecanvas")
         var index = x;
         const memory = toGB(findClosest(memoryScores, x, 0));
         const [cpu, systemCpu] = findClosest(cpuScores, x, [0,0]);
-        showHover(x + 20, 0,
+        showHover(x + 20, 0, 180,
             `${toHourMinSec(when)}: ` +
             `cpu:${cpu}%   ` +
             `system:${systemCpu}%   ` +
@@ -534,23 +556,26 @@ $("#timelinecanvas")
     });
 
 function updateTimelineHover(event, marker, text) {
+    hideHover();
     const x = marker.offset().left + marker.width() / 2;
-    showHover(x, event.pageY, text);
+    showHover(x + 20, -1, event.pageY, text);
+    event.stopPropagation();
 }
 
-function showHover(x, y, text) {
+function showHover(x, connectorY, labelY, text) {
     const width = $("body").width();
     $("#timelinehover")
         .text(text)
         .css({
             left: x > width / 2 ? x - $("#timelinehover").width() : x, 
-            top: 180,
+            top: labelY,
         });
+    if (connectorY == -1) return;
     $("#timelinehoverconnector")
         .css({
             left: x,
-            top: y + $("#timeline").offset().top,
-            height: 138 - y,
+            top: connectorY + $("#timeline").offset().top,
+            height: 138 - connectorY,
         });
 }
 
@@ -561,7 +586,7 @@ function showHeap(x, snapshot) {
         .append(table)
         .css({
             left: $("#timelinehover").css("left"),
-            top: 200,
+            top: 205,
         });
     for (const measure of snapshot) {
         const [index, count, size] = measure;
@@ -642,6 +667,7 @@ function createGraph() {
             sprite.textHeight = 8;
             return sprite;
         })
+        .onNodeClick(zoomToNode)
         .onNodeDragEnd(node => {
             node.fx = node.x;
             node.fy = node.y;
@@ -740,7 +766,7 @@ function getModuleName(index) {
     }
 }
 
-function addCallToTimeline(call) {
+function addCallToTimeline(call, index) {
     const timeline = $("#timeline");
     const [when, callsiteIndex, count] = call;
     const x = getX(when);
@@ -749,18 +775,45 @@ function addCallToTimeline(call) {
     const y = getModuleName(sourceIndex).hashCode() % 100;
     var color = getColor(getGroupName(sourceIndex));
     const title = "Call from " + 
-        getGroupName(sourceIndex) + "." + getModuleName(sourceIndex) + " to " + 
-        getGroupName(targetIndex) + "." + getModuleName(targetIndex);
+        getModuleName(sourceIndex) + 
+        " to " + 
+        getModuleName(targetIndex) + 
+        ". Click to find this call in the graph.";
     $("<div>")
         .attr("module", getModuleName(sourceIndex))
         .addClass("timelinemarker")
         .css({
-            left: x,
-            top: y,
+            left: x - 3,
+            top: y - 3,
             backgroundColor: color,
+            border: "none",
         })
-        .hover(function(event) {
+        .on("click", function(event) {
+            zoomToModule(getModuleName(sourceIndex));
+            event.stopPropagation();
+        })
+        .on("mousemove", function(event) {
             updateTimelineHover(event, $(this), title);
+        })
+        .on("mouseenter", function(event) {
+            $(this).css({
+                left: x - 10,
+                top: y - 10,
+                borderRadius: 10,
+                width: 20,
+                height: 20,
+                border: "3px solid white",
+            })
+        })
+        .on("mouseleave", function(event) {
+            $(this).css({
+                left: x - 3,
+                top: y - 3,
+                borderRadius: 3,
+                width: 6,
+                height: 6,
+                border: "none",
+            })
         })
         .appendTo(timeline);
 }
@@ -781,6 +834,7 @@ function addNode(index) {
     if (!nodeMap[moduleName]) {
         newNodes[moduleName] = nodeMap[moduleName] = {
             id: settings.full ? `${moduleName}` : moduleName.split(".").pop(),
+            name: moduleName,
             group: getGroupName(index)
         };
     }
