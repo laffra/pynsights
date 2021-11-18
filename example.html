@@ -101,6 +101,13 @@
             color: orange;
             border-width: 0;
         }
+        #timelinehover {
+            font-size: 20px;
+            font-family: Arial, Helvetica, sans-serif;
+            background-color: black;
+            border: 1px solid white;
+            padding: 4px;
+        }
         table {
             border-collapse: collapse; 
         }
@@ -113,11 +120,16 @@
         #timelinehoverheap td {
             padding-right: 8px;
             color: white;
+            background-color: black;
+            border: 1px solid white;
+            padding: 4px;
         }
         .timelinemarker {
             position: absolute;
             width: 6px;
             height: 6px;
+        }
+        .timelinemarker div {
             border-radius: 3px;
         }
         #timelineplay {
@@ -152,12 +164,6 @@
             height: 100%;
             border: 0px solid rgb(85, 85, 85);
             border-left-width: 1px;
-        }
-        .timelinemarker:hover {
-            position: absolute;
-            width: 12px;
-            height: 12px;
-            border-radius: 6px;
         }
     </style>
     <body>
@@ -236,42 +242,47 @@ var playIndex = settings.time;
 var timelineMarkerCount = 0;
 var paused = false;
 
-const modulenames = ["python.runpy", "pynsights.pynsights.cli", "python.pkgutil", "python.zipimport", "python.importlib", "pynsights.example", "python.importlib", "pynsights.hello", "pynsights.hello.helloworld", "pynsights.hello.hello", "pynsights.hello.world", "pynsights.pynsights", "python.functools", "python.threading"] // [];
-const callsites = [[1, 0], [0, 2], [2, 3], [3, 4], [2, 4], [0, 5], [5, 6], [6, 4], [4, 6], [6, 7], [4, 3], [6, 8], [8, 6], [6, 9], [6, 10], [5, 11], [11, 12], [11, 5], [5, 8], [8, 9], [8, 10], [1, 11], [11, 13]] // [];
-const calls = [[252, 18, 1], [252, 19, 1], [252, 20, 1], [353, 18, 1], [353, 19, 1], [353, 20, 1], [454, 18, 1], [454, 19, 1], [454, 20, 1], [559, 18, 1], [559, 19, 1], [559, 20, 1], [663, 18, 1], [663, 19, 1], [663, 20, 1], [765, 18, 1], [765, 19, 1], [765, 20, 1], [866, 18, 1], [866, 19, 1], [866, 20, 1], [966, 18, 1], [966, 19, 1], [966, 20, 1], [1068, 18, 1], [1068, 19, 1], [1068, 20, 1], [1168, 18, 1], [1168, 19, 1], [1168, 20, 1]] // [];
-const cpus = [[14, 0.0, 15.9], [798, 3.0, 13.1], [1272, 0.1, 11.6]] // [];
+const modulenames = ["python.runpy", "pynsights.pynsights.cli", "python.pkgutil", "python.zipimport", "python.importlib", "pynsights.pynsights", "pynsights.example", "python.importlib", "pynsights.hello", "pynsights.hello.helloworld", "pynsights.hello.hello", "pynsights.hello.world", "python.functools", "python.threading"] // [];
+const callsites = [[1, 0], [0, 2], [2, 3], [3, 4], [2, 4], [0, 5], [0, 6], [6, 7], [7, 4], [4, 7], [7, 8], [4, 3], [7, 9], [9, 7], [7, 10], [7, 11], [6, 5], [5, 12], [5, 6], [6, 9], [9, 10], [9, 11], [1, 5], [5, 13]] // [];
+const calls = [[255, 19, 1], [255, 20, 1], [255, 21, 1], [357, 19, 1], [357, 20, 1], [357, 21, 1], [461, 19, 1], [461, 20, 1], [461, 21, 1], [563, 19, 1], [563, 20, 1], [563, 21, 1], [666, 19, 1], [666, 20, 1], [666, 21, 1], [768, 19, 1], [769, 20, 1], [769, 21, 1], [872, 19, 1], [872, 20, 1], [872, 21, 1], [977, 19, 1], [977, 20, 1], [977, 21, 1], [1077, 19, 1], [1077, 20, 1], [1077, 21, 1], [1181, 19, 1], [1181, 20, 1], [1181, 21, 1]] // [];
+const cpus = [[8, 0.0, 26.2], [758, 2.8, 20.5], [1261, 0.0, 22.4], [1288, 0.9, 13.8]] // [];
 const memories = [
     [
-        14,
-        22216704.0
+        8,
+        21917696.0
     ],
     [
-        798,
-        26894336.0
+        758,
+        27189248.0
     ],
     [
-        1272,
-        26894336.0
+        1261,
+        27193344.0
+    ],
+    [
+        1288,
+        27193344.0
     ]
 ] // [];
 const types = ["member_descriptor", "enum.EnumMeta", "function", "frozenset", "getset_descriptor", "int", "method_descriptor", "weakref", "abc.ABCMeta", "builtin_function_or_method", "wrapper_descriptor", "set", "_io.BufferedReader", "tuple", "_io.BufferedWriter", "list", "code", "type", "dict", "str", "Total#Heap#Size#and#Count"] // [];
 const heap = [
-    [1272, [[0, 372, 23808], [1, 29, 30688], [2, 247, 33592], [3, 105, 36248], [4, 626, 40064], [5, 2182, 65672], [6, 936, 67392], [7, 1093, 78696], [8, 80, 80544], [9, 1140, 82080], [10, 1223, 88056], [11, 110, 100560], [12, 1, 131240], [13, 3023, 174848], [14, 3, 266744], [15, 3223, 315648], [16, 4111, 728313], [17, 869, 734728], [18, 2950, 1494024], [19, 16585, 1716194], [20, 45919, 7020383]]]
+    [1288, [[0, 372, 23808], [1, 29, 30688], [2, 247, 33592], [3, 105, 36248], [4, 626, 40064], [5, 2182, 65672], [6, 936, 67392], [7, 1093, 78696], [8, 80, 80544], [9, 1140, 82080], [10, 1223, 88056], [11, 110, 100560], [12, 1, 131240], [13, 3023, 174848], [14, 3, 266744], [15, 3188, 312848], [16, 4111, 728313], [17, 869, 735304], [18, 2951, 1493680], [19, 16554, 1714431], [20, 45854, 7016052]]]
 ] // [];
 const gcs = [
-    [294, 1, 0, 0],
-    [294, 0, 0, 0],
-    [294, 0, 0, 0],
-    [294, 0, 0, 0],
-    [1271, 3, 0, 0],
-    [1275, 3, 6, 0],
-    [1558, 1, 0, 0],
-    [1558, 0, 0, 0],
-    [1558, 0, 0, 0],
-    [1559, 0, 0, 0]
+    [78, 2, 0, 0],
+    [254, 0, 0, 0],
+    [254, 0, 0, 0],
+    [254, 0, 0, 0],
+    [254, 0, 0, 0],
+    [1288, 3, 0, 0],
+    [1290, 2, 6, 0],
+    [1587, 1, 0, 0],
+    [1587, 0, 0, 0],
+    [1587, 0, 0, 0],
+    [1588, 1, 0, 0]
 ] // [];
-const annotations = [[252, "Enter __main__.run"], [252, "helloworld - 1"], [353, "helloworld - 2"], [454, "helloworld - 3"], [559, "helloworld - 4"], [663, "helloworld - 5"], [765, "helloworld - 6"], [866, "helloworld - 7"], [966, "helloworld - 8"], [1068, "helloworld - 9"], [1168, "helloworld - 10"], [1271, "Exit __main__.run"]] // [];
-const programDuration = 1272 // 1;
+const annotations = [[255, "Enter __main__.run"], [255, "helloworld - 1"], [357, "helloworld - 2"], [461, "helloworld - 3"], [563, "helloworld - 4"], [666, "helloworld - 5"], [768, "helloworld - 6"], [872, "helloworld - 7"], [977, "helloworld - 8"], [1077, "helloworld - 9"], [1181, "helloworld - 10"], [1288, "Exit __main__.run"]] // [];
+const programDuration = 1288 // 1;
 
 const memoryScores = {};
 const cpuScores = {};
@@ -347,22 +358,41 @@ String.prototype.hashCode = function() {
 
 function addCallsToTimeline(index) {
     if (index >= calls.length) return;
-    const end = Math.min(calls.length, index + 500);
-    var markersToAdd = 21;
+    const end = Math.min(calls.length, index + programDuration / $("#timeline").width());
+    console.log("add calls", index, end)
+    var markersToAdd = 11;
     while (index < end) {
         if (markersToAdd-- > 0) {
             try {
-                addCallToTimeline(calls[index]);
+                console.log("   add", index)
+                addCallToTimeline(calls[index], index);
             } catch(e) {
                 console.log("Cannot add call", index, calls.length, e);
             }
         }
         const lastWhen = calls[index++][0];
-        while (index < end && calls[index][0] < lastWhen + 100) {
-            index += 1;
-        }
+        index += 1;
     }
     setTimeout(function() { addCallsToTimeline(index); }, 1);
+}
+
+function zoomToModule(name) {
+    for (const node of graphData.nodes) {
+        if (node.name == name) {
+            zoomToNode(node);
+            break;
+        }
+    }
+}
+
+function zoomToNode(node) {
+    const distance = 400;
+    const distRatio = 1 + distance/Math.hypot(node.x, node.y, node.z);
+    Graph.cameraPosition(
+        { x: node.x * distRatio, y: node.y * distRatio, z: node.z * distRatio },
+        node,
+        1500,
+    );
 }
 
 function drawTimelineChartLine(context, x1, y1, x2, y2, color) {
@@ -493,7 +523,7 @@ function annotateTimelineMarker(annotation) {
             left: getX(when) + 4,
             top: y,
         })
-        .text(`${when} ${getX(when)} ${message}`)
+        .text(`${message}`)
         .appendTo(timeline);
 }
 
@@ -549,7 +579,7 @@ $("#timelinecanvas")
         var index = x;
         const memory = toGB(findClosest(memoryScores, x, 0));
         const [cpu, systemCpu] = findClosest(cpuScores, x, [0,0]);
-        showHover(x + 20, 0,
+        showHover(x + 20, 0, 180,
             `${toHourMinSec(when)}: ` +
             `cpu:${cpu}%   ` +
             `system:${systemCpu}%   ` +
@@ -560,34 +590,37 @@ $("#timelinecanvas")
     });
 
 function updateTimelineHover(event, marker, text) {
+    hideHover();
     const x = marker.offset().left + marker.width() / 2;
-    showHover(x, event.pageY, text);
+    showHover(x + 40, -1, event.pageY + 40, text);
+    event.stopPropagation();
 }
 
-function showHover(x, y, text) {
+function showHover(x, connectorY, labelY, text) {
     const width = $("body").width();
     $("#timelinehover")
         .text(text)
         .css({
             left: x > width / 2 ? x - $("#timelinehover").width() : x, 
-            top: 180,
+            top: labelY,
         });
+    if (connectorY == -1) return;
     $("#timelinehoverconnector")
         .css({
             left: x,
-            top: y + $("#timeline").offset().top,
-            height: 138 - y,
+            top: connectorY + $("#timeline").offset().top,
+            height: 138 - connectorY,
         });
 }
 
 function showHeap(x, snapshot) {
-    const table = $("<table>")
+    const table = $("<table>");
     $("#timelinehoverheap")
         .empty()
         .append(table)
         .css({
-            left: $("#timelinehover").css("left"),
-            top: 200,
+            left: $("#timelinehover").offset().left - 4,
+            top: 210,
         });
     for (const measure of snapshot) {
         const [index, count, size] = measure;
@@ -668,6 +701,7 @@ function createGraph() {
             sprite.textHeight = 8;
             return sprite;
         })
+        .onNodeClick(zoomToNode)
         .onNodeDragEnd(node => {
             node.fx = node.x;
             node.fy = node.y;
@@ -766,27 +800,72 @@ function getModuleName(index) {
     }
 }
 
-function addCallToTimeline(call) {
+function addCallToTimeline(call, index) {
     const timeline = $("#timeline");
     const [when, callsiteIndex, count] = call;
     const x = getX(when);
     const [sourceIndex, targetIndex] = callsites[callsiteIndex];
-    if (!inFocus(sourceIndex) || !inFocus(targetIndex)) return;
-    const y = getModuleName(sourceIndex).hashCode() % 100;
+    if (!inFocus(sourceIndex) && !inFocus(targetIndex)) return;
+    const sourceName = getModuleName(sourceIndex);
+    const targetName = getModuleName(targetIndex);
+    const y = sourceName.hashCode() % 100;
     var color = getColor(getGroupName(sourceIndex));
     const title = "Call from " + 
-        getGroupName(sourceIndex) + "." + getModuleName(sourceIndex) + " to " + 
-        getGroupName(targetIndex) + "." + getModuleName(targetIndex);
+        sourceName + 
+        " to " + 
+        targetName + 
+        ". Click to find this call in the graph.";
     $("<div>")
-        .attr("module", getModuleName(sourceIndex))
+        .attr("module", sourceName)
         .addClass("timelinemarker")
         .css({
-            left: x,
-            top: y,
-            backgroundColor: color,
+            left: x - 13,
+            top: y - 8,
+            padding: 5,
         })
-        .hover(function(event) {
+        .append($("<div>")
+            .css({
+                width: "100%",
+                height: "100%",
+                backgroundColor: color,
+            })
+        )
+        .on("click", function(event) {
+            zoomToModule(sourceName)
+            event.stopPropagation();
+        })
+        .on("mousemove", function(event) {
             updateTimelineHover(event, $(this), title);
+        })
+        .on("mouseenter", function(event) {
+            $(".timelinemarker").css("opacity", 0.3);
+            $(`.timelinemarker[module="${sourceName}"]`).each(function() {
+                $(this).css({
+                    width: 16,
+                    height: 16,
+                    padding: 0,
+                    zIndex: 20000,
+                    opacity: 1.0,
+                })
+                .find("div").css({
+                    borderRadius: 8,
+                })
+            });
+            $(this).appendTo(timeline);
+        })
+        .on("mouseleave", function(event) {
+            $(".timelinemarker").css("opacity", "1.0");
+            $(`.timelinemarker[module="${sourceName}"]`).each(function() {
+                $(this).css({
+                    width: 6,
+                    height: 6,
+                    padding: 5,
+                    zIndex: 10000,
+                })
+                .find("div").css({
+                    borderRadius: 3,
+                })
+            })
         })
         .appendTo(timeline);
 }
@@ -798,7 +877,7 @@ function linkKey(source, target) {
 function inFocus(index) {
     const moduleName = getModuleName(index);
     if (settings.focus && moduleName.match(new RegExp(settings.focus))) return true;
-    if (settings.python && moduleName.indexOf("python") != -1) return true;
+    if (!settings.python && moduleName.indexOf("python") != -1) return false;
     return !settings.focus;
 }
 
@@ -807,6 +886,7 @@ function addNode(index) {
     if (!nodeMap[moduleName]) {
         newNodes[moduleName] = nodeMap[moduleName] = {
             id: settings.full ? `${moduleName}` : moduleName.split(".").pop(),
+            name: moduleName,
             group: getGroupName(index)
         };
     }
@@ -815,13 +895,6 @@ function addNode(index) {
 
 function addLink(when, sourceIndex, targetIndex, count) {
     if (!inFocus(sourceIndex) || !inFocus(targetIndex)) return;
-    if (getModuleName(sourceIndex) == "six") {
-        console.log("source:", inFocus(sourceIndex), getModuleName(sourceIndex))
-        console.log("target:", inFocus(targetIndex), getModuleName(targetIndex))
-        console.log("count:", count)
-        console.log("when:", when)
-        throw Exception("Adding six")
-    }
     const source = addNode(sourceIndex);
     const target = addNode(targetIndex);
     const key = linkKey(source.id, target.id);

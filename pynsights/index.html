@@ -105,6 +105,8 @@
             font-size: 20px;
             font-family: Arial, Helvetica, sans-serif;
             background-color: black;
+            border: 1px solid white;
+            padding: 4px;
         }
         table {
             border-collapse: collapse; 
@@ -118,6 +120,9 @@
         #timelinehoverheap td {
             padding-right: 8px;
             color: white;
+            background-color: black;
+            border: 1px solid white;
+            padding: 4px;
         }
         .timelinemarker {
             position: absolute;
@@ -322,11 +327,13 @@ String.prototype.hashCode = function() {
 
 function addCallsToTimeline(index) {
     if (index >= calls.length) return;
-    const end = Math.min(calls.length, index + 50);
+    const end = Math.min(calls.length, index + programDuration / $("#timeline").width());
+    console.log("add calls", index, end)
     var markersToAdd = 11;
     while (index < end) {
         if (markersToAdd-- > 0) {
             try {
+                console.log("   add", index)
                 addCallToTimeline(calls[index], index);
             } catch(e) {
                 console.log("Cannot add call", index, calls.length, e);
@@ -576,13 +583,13 @@ function showHover(x, connectorY, labelY, text) {
 }
 
 function showHeap(x, snapshot) {
-    const table = $("<table>")
+    const table = $("<table>");
     $("#timelinehoverheap")
         .empty()
         .append(table)
         .css({
-            left: $("#timelinehover").css("left"),
-            top: 205,
+            left: $("#timelinehover").offset().left - 4,
+            top: 210,
         });
     for (const measure of snapshot) {
         const [index, count, size] = measure;

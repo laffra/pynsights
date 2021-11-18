@@ -6,6 +6,7 @@ import json
 import pathlib
 import webbrowser
 import os
+import time
 from pynsights.constants import *
 
 modulenames = []
@@ -158,9 +159,13 @@ def open_ui(output):
 
 
 def render(input_file, output=None, open_browser=False):
+    start = time.time()
     read_dump(input_file)
     if output is None:
         output = input_file.with_suffix(".html")
+    print("Read trace file in", time.time() - start, "s")
+    start = time.time()
     generate(output)
+    print("Generated output in", time.time() - start, "s")
     if open_browser:
         open_ui(pathlib.Path(output))
