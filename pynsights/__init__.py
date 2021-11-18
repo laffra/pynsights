@@ -89,6 +89,8 @@ def get_module_from_filename(filename):
     path = pathlib.Path(filename)
     while path:
         name = path.stem
+        if name == "<string>":
+            return "python.string"
         if name.startswith("<frozen "):
             name = re.sub("<frozen ", "", name).replace(">", "")
             return f"python.{name}"
@@ -97,9 +99,9 @@ def get_module_from_filename(filename):
         path = path.parent
         if not os.path.exists(os.path.join(path, "__init__.py")): # not a module
             break
-    name = path.name or pathlib.Path(os.getcwd()).name
-    if name != "site-packages":
-        parts.insert(0, re.sub("python[0-9.]*", "python", name))
+    rootName = path.name or pathlib.Path(os.getcwd()).name
+    if rootName != "site-packages":
+        parts.insert(0, re.sub("python[0-9.]*", "python", rootName))
     return ".".join(parts)
     
 

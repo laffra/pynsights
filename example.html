@@ -186,6 +186,9 @@
                 <option name="low">low</option>
             </select>
 
+            <input type="checkbox" id="python"></input>
+            <label for="python">Python</label>
+
             <input type="checkbox" id="sound"></input>
             <label for="sound">Sound</label>
 
@@ -216,6 +219,7 @@ const settings = {
     level: getPreference("level") || "high",
     full: getPreference("full") == "true",
     sound: getPreference("sound") == "true",
+    python: getPreference("python") == "true",
     focus: getPreference("focus"),
     time: parseInt(getPreference("time") || "0"),
 };
@@ -234,44 +238,40 @@ var paused = false;
 
 const modulenames = ["python.runpy", "pynsights.pynsights.cli", "python.pkgutil", "python.zipimport", "python.importlib", "pynsights.example", "python.importlib", "pynsights.hello", "pynsights.hello.helloworld", "pynsights.hello.hello", "pynsights.hello.world", "pynsights.pynsights", "python.functools", "python.threading"] // [];
 const callsites = [[1, 0], [0, 2], [2, 3], [3, 4], [2, 4], [0, 5], [5, 6], [6, 4], [4, 6], [6, 7], [4, 3], [6, 8], [8, 6], [6, 9], [6, 10], [5, 11], [11, 12], [11, 5], [5, 8], [8, 9], [8, 10], [1, 11], [11, 13]] // [];
-const calls = [[276, 18, 1], [276, 19, 1], [276, 20, 1], [379, 18, 1], [379, 19, 1], [379, 20, 1], [482, 18, 1], [482, 19, 1], [482, 20, 1], [587, 18, 1], [587, 19, 1], [587, 20, 1], [690, 18, 1], [690, 19, 1], [690, 20, 1], [791, 18, 1], [791, 19, 1], [791, 20, 1], [895, 18, 1], [895, 19, 1], [895, 20, 1], [999, 18, 1], [999, 19, 1], [999, 20, 1], [1099, 18, 1], [1099, 19, 1], [1099, 20, 1], [1199, 18, 1], [1199, 19, 1], [1199, 20, 1]] // [];
-const cpus = [[10, 0.0, 13.9], [780, 2.9, 10.6], [1282, 0.0, 8.6], [1304, 1.3, 8.0]] // [];
+const calls = [[252, 18, 1], [252, 19, 1], [252, 20, 1], [353, 18, 1], [353, 19, 1], [353, 20, 1], [454, 18, 1], [454, 19, 1], [454, 20, 1], [559, 18, 1], [559, 19, 1], [559, 20, 1], [663, 18, 1], [663, 19, 1], [663, 20, 1], [765, 18, 1], [765, 19, 1], [765, 20, 1], [866, 18, 1], [866, 19, 1], [866, 20, 1], [966, 18, 1], [966, 19, 1], [966, 20, 1], [1068, 18, 1], [1068, 19, 1], [1068, 20, 1], [1168, 18, 1], [1168, 19, 1], [1168, 20, 1]] // [];
+const cpus = [[14, 0.0, 15.9], [798, 3.0, 13.1], [1272, 0.1, 11.6]] // [];
 const memories = [
     [
-        10,
-        22175744.0
+        14,
+        22216704.0
     ],
     [
-        780,
-        26771456.0
+        798,
+        26894336.0
     ],
     [
-        1282,
-        26771456.0
-    ],
-    [
-        1304,
-        26771456.0
+        1272,
+        26894336.0
     ]
 ] // [];
 const types = ["member_descriptor", "enum.EnumMeta", "function", "frozenset", "getset_descriptor", "int", "method_descriptor", "weakref", "abc.ABCMeta", "builtin_function_or_method", "wrapper_descriptor", "set", "_io.BufferedReader", "tuple", "_io.BufferedWriter", "list", "code", "type", "dict", "str", "Total#Heap#Size#and#Count"] // [];
 const heap = [
-    [1304, [[0, 372, 23808], [1, 29, 30688], [2, 247, 33592], [3, 105, 36248], [4, 626, 40064], [5, 2182, 65672], [6, 936, 67392], [7, 1093, 78696], [8, 80, 80544], [9, 1140, 82080], [10, 1223, 88056], [11, 110, 100560], [12, 1, 131240], [13, 3023, 174848], [14, 3, 266744], [15, 3223, 315648], [16, 4111, 728313], [17, 869, 735304], [18, 2951, 1493680], [19, 16585, 1716153], [20, 45920, 7020574]]]
+    [1272, [[0, 372, 23808], [1, 29, 30688], [2, 247, 33592], [3, 105, 36248], [4, 626, 40064], [5, 2182, 65672], [6, 936, 67392], [7, 1093, 78696], [8, 80, 80544], [9, 1140, 82080], [10, 1223, 88056], [11, 110, 100560], [12, 1, 131240], [13, 3023, 174848], [14, 3, 266744], [15, 3223, 315648], [16, 4111, 728313], [17, 869, 734728], [18, 2950, 1494024], [19, 16585, 1716194], [20, 45919, 7020383]]]
 ] // [];
 const gcs = [
-    [275, 1, 0, 0],
-    [275, 0, 0, 0],
-    [275, 0, 0, 0],
-    [275, 0, 0, 0],
-    [1303, 3, 0, 0],
-    [1307, 3, 6, 0],
-    [1589, 1, 0, 0],
-    [1589, 0, 0, 0],
-    [1589, 0, 0, 0],
-    [1589, 0, 0, 0]
+    [294, 1, 0, 0],
+    [294, 0, 0, 0],
+    [294, 0, 0, 0],
+    [294, 0, 0, 0],
+    [1271, 3, 0, 0],
+    [1275, 3, 6, 0],
+    [1558, 1, 0, 0],
+    [1558, 0, 0, 0],
+    [1558, 0, 0, 0],
+    [1559, 0, 0, 0]
 ] // [];
-const annotations = [[276, "Enter __main__.run"], [276, "helloworld - 1"], [379, "helloworld - 2"], [482, "helloworld - 3"], [587, "helloworld - 4"], [690, "helloworld - 5"], [791, "helloworld - 6"], [895, "helloworld - 7"], [999, "helloworld - 8"], [1099, "helloworld - 9"], [1199, "helloworld - 10"], [1304, "Exit __main__.run"]] // [];
-const programDuration = 1304 // 1;
+const annotations = [[252, "Enter __main__.run"], [252, "helloworld - 1"], [353, "helloworld - 2"], [454, "helloworld - 3"], [559, "helloworld - 4"], [663, "helloworld - 5"], [765, "helloworld - 6"], [866, "helloworld - 7"], [966, "helloworld - 8"], [1068, "helloworld - 9"], [1168, "helloworld - 10"], [1271, "Exit __main__.run"]] // [];
+const programDuration = 1272 // 1;
 
 const memoryScores = {};
 const cpuScores = {};
@@ -625,6 +625,11 @@ $("#level")
     .on("change", () => {
         reloadWith("level", $("#level").val());
     });
+$("#python")
+    .prop("checked", settings.python)
+    .on("change", () => {
+        reloadWith("python", $("#python").is(":checked"));
+    });
 $("#sound")
     .prop("checked", settings.sound)
     .on("change", () => {
@@ -696,7 +701,7 @@ function createGraph() {
         graph.postProcessingComposer().addPass(bloomPass);
     }
 
-    const force = settings.level > 1 ? -500 : -200;
+    const force = -100;
     graph.d3Force('charge').strength(settings.full ? 2 * force : force);
     return graph;
 }
@@ -792,8 +797,9 @@ function linkKey(source, target) {
 
 function inFocus(index) {
     const moduleName = getModuleName(index);
-    const focus = new RegExp(settings.focus);
-    return moduleName.match(focus);
+    if (settings.focus && moduleName.match(new RegExp(settings.focus))) return true;
+    if (settings.python && moduleName.indexOf("python") != -1) return true;
+    return !settings.focus;
 }
 
 function addNode(index) {
@@ -809,13 +815,19 @@ function addNode(index) {
 
 function addLink(when, sourceIndex, targetIndex, count) {
     if (!inFocus(sourceIndex) || !inFocus(targetIndex)) return;
+    if (getModuleName(sourceIndex) == "six") {
+        console.log("source:", inFocus(sourceIndex), getModuleName(sourceIndex))
+        console.log("target:", inFocus(targetIndex), getModuleName(targetIndex))
+        console.log("count:", count)
+        console.log("when:", when)
+        throw Exception("Adding six")
+    }
     const source = addNode(sourceIndex);
     const target = addNode(targetIndex);
     const key = linkKey(source.id, target.id);
-    setTimeout(() => {
-        if (!settings.sound) return;
-        beep(source);
-    }, Math.random() * playChunkDelay);
+    if (settings.sound) {
+        setTimeout(() => { beep(source); }, Math.random() * playChunkDelay);
+    }
     var link = linkMap[key];
     if (link === undefined) {
         link = {
@@ -857,8 +869,6 @@ function getWhen(index) {
 function addToGraph(call) {
     const [when, callsiteIndex, count] = call;
     const [source, target] = callsites[callsiteIndex];
-    if (getGroupName(source) == "bootstrap") return;
-    if (getGroupName(target) == "bootstrap") return;
     addLink(when, source, target, count);
 }
 
