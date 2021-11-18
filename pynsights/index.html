@@ -772,7 +772,7 @@ function linkKey(source, target) {
 function inFocus(index) {
     const moduleName = getModuleName(index);
     if (settings.focus && moduleName.match(new RegExp(settings.focus))) return true;
-    if (settings.python && moduleName.indexOf("python") != -1) return true;
+    if (!settings.python && moduleName.indexOf("python") != -1) return false;
     return !settings.focus;
 }
 
@@ -789,13 +789,6 @@ function addNode(index) {
 
 function addLink(when, sourceIndex, targetIndex, count) {
     if (!inFocus(sourceIndex) || !inFocus(targetIndex)) return;
-    if (getModuleName(sourceIndex) == "six") {
-        console.log("source:", inFocus(sourceIndex), getModuleName(sourceIndex))
-        console.log("target:", inFocus(targetIndex), getModuleName(targetIndex))
-        console.log("count:", count)
-        console.log("when:", when)
-        throw Exception("Adding six")
-    }
     const source = addNode(sourceIndex);
     const target = addNode(targetIndex);
     const key = linkKey(source.id, target.id);
