@@ -771,9 +771,9 @@ function linkKey(source, target) {
 
 function inFocus(index) {
     const moduleName = getModuleName(index);
-    const focus = new RegExp(settings.focus);
-    if (!settings.python && moduleName.indexOf("python") != -1) return false;
-    return moduleName.match(focus);
+    if (settings.focus && moduleName.match(new RegExp(settings.focus))) return true;
+    if (settings.python && moduleName.indexOf("python") != -1) return true;
+    return !settings.focus;
 }
 
 function addNode(index) {
@@ -789,13 +789,19 @@ function addNode(index) {
 
 function addLink(when, sourceIndex, targetIndex, count) {
     if (!inFocus(sourceIndex) || !inFocus(targetIndex)) return;
+    if (getModuleName(sourceIndex) == "six") {
+        console.log("source:", inFocus(sourceIndex), getModuleName(sourceIndex))
+        console.log("target:", inFocus(targetIndex), getModuleName(targetIndex))
+        console.log("count:", count)
+        console.log("when:", when)
+        throw Exception("Adding six")
+    }
     const source = addNode(sourceIndex);
     const target = addNode(targetIndex);
     const key = linkKey(source.id, target.id);
-    setTimeout(() => {
-        if (!settings.sound) return;
-        beep(source);
-    }, Math.random() * playChunkDelay);
+    if (settings.sound) {
+        setTimeout(() => { beep(source); }, Math.random() * playChunkDelay);
+    }
     var link = linkMap[key];
     if (link === undefined) {
         link = {
@@ -837,8 +843,6 @@ function getWhen(index) {
 function addToGraph(call) {
     const [when, callsiteIndex, count] = call;
     const [source, target] = callsites[callsiteIndex];
-    if (getGroupName(source) == "bootstrap") return;
-    if (getGroupName(target) == "bootstrap") return;
     addLink(when, source, target, count);
 }
 
