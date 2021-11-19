@@ -19,6 +19,7 @@
         }
         #focus {
             width: 300px;
+            margin-right: 11px;
         }
         input {
             background-color: lightgray;
@@ -192,6 +193,13 @@
                 <option name="low">low</option>
             </select>
 
+            <label for="speed">Speed:</label>
+            <select id="speed">
+                <option name="slow">slow</option>
+                <option name="normal" selected>normal</option>
+                <option name="fast">fast</option>
+            </select>
+
             <input type="checkbox" id="python"></input>
             <label for="python">Python</label>
 
@@ -223,6 +231,7 @@ const settings = {
     dots: getPreference("dots") != "false",
     bloom: getPreference("bloom") != "false",
     level: getPreference("level") || "high",
+    speed: getPreference("speed") || "normal",
     full: getPreference("full") == "true",
     sound: getPreference("sound") == "true",
     python: getPreference("python") == "true",
@@ -271,7 +280,12 @@ function getColor(group) {
 }
 
 const SHORT_RUN = 5000;
-const playSectionDuration = programDuration > SHORT_RUN ? 50 : 1;
+const SPEED = {
+    "slow": 0.1,
+    "normal": 1.0,
+    "fast": 100.0,
+}
+const playSectionDuration = programDuration > SHORT_RUN ? 50 * SPEED[settings.speed] : 1;
 var playChunkDelay = 50;
 
 $(window).resize(() => window.location.reload());
@@ -328,12 +342,10 @@ String.prototype.hashCode = function() {
 function addCallsToTimeline(index) {
     if (index >= calls.length) return;
     const end = Math.min(calls.length, index + programDuration / $("#timeline").width());
-    console.log("add calls", index, end)
     var markersToAdd = 11;
     while (index < end) {
         if (markersToAdd-- > 0) {
             try {
-                console.log("   add", index)
                 addCallToTimeline(calls[index], index);
             } catch(e) {
                 console.log("Cannot add call", index, calls.length, e);
@@ -456,13 +468,12 @@ function getX(when) {
     return Math.round((when - firstWhen) * ($("#timeline").width() - 24) / (programDuration - firstWhen)) + 12;
 }
 
-function updateTimeline(call) {
+function updateTimeline(call, duration) {
     if (!call) return;
     const [when, callsite, count] = call;
-    $("#timelinehandle")
-        .css("left", getX(when));
+    $("#timelinehandle,#timelinetime")
+        .animate({ left: getX(when) }, duration);
     $("#timelinetime")
-        .css("left", getX(when))
         .text(`${toHourMinSec(when)}`)
 }
 
@@ -626,6 +637,11 @@ $("#level")
     .val(settings.level)
     .on("change", () => {
         reloadWith("level", $("#level").val());
+    });
+$("#speed")
+    .val(settings.speed)
+    .on("change", () => {
+        reloadWith("speed", $("#speed").val());
     });
 $("#python")
     .prop("checked", settings.python)
@@ -927,7 +943,7 @@ function getTimeMillis() {
 }
 
 function initTimeline() {
-    updateTimeline(calls[playIndex]);
+    updateTimeline(calls[playIndex], 0);
     annotateTimeline(0);
     addCallsToTimeline(0);
     addCpuScoresToTimeline();
@@ -963,6 +979,7 @@ function playCalls() {
     if (playIndex == 0) resetLinkCounts();
     const clockStart = getTimeMillis();
     const whenStart = getWhen(playIndex);
+    var clockDuration = 0;
     function playChunk() {
         if (!isPlaying()) return;
         const chunkEnd = findChunkEnd(playIndex);
@@ -975,17 +992,18 @@ function playCalls() {
             stopPlaying();
         } 
         else {
-            const clockNow = getTimeMillis();
+            const clockNow = getTimeMillis();1
             const whenNow = getWhen(playIndex);
-            const clockDuration = clockNow - clockStart;
+            clockDuration = clockNow - clockStart;
             const whenDuration = whenNow - whenStart;
-            playChunkDelay = Math.min(500, Math.max(1, whenDuration - clockDuration));
+            const duration = whenDuration - clockDuration;
+            playChunkDelay = duration / SPEED[settings.speed];
             if (programDuration < 1000) {
                 playChunkDelay += 1000;
             }
             setTimeout(playChunk, playChunkDelay)
         }
-        updateTimeline(calls[playIndex]);
+        updateTimeline(calls[playIndex], playChunkDelay + clockDuration);
     }
     setTimeout(playChunk, 1);
 }
