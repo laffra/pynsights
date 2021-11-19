@@ -19,6 +19,7 @@
         }
         #focus {
             width: 300px;
+            margin-right: 11px;
         }
         input {
             background-color: lightgray;
@@ -192,6 +193,13 @@
                 <option name="low">low</option>
             </select>
 
+            <label for="speed">Speed:</label>
+            <select id="speed">
+                <option name="slow">slow</option>
+                <option name="normal" selected>normal</option>
+                <option name="fast">fast</option>
+            </select>
+
             <input type="checkbox" id="python"></input>
             <label for="python">Python</label>
 
@@ -223,6 +231,7 @@ const settings = {
     dots: getPreference("dots") != "false",
     bloom: getPreference("bloom") != "false",
     level: getPreference("level") || "high",
+    speed: getPreference("speed") || "normal",
     full: getPreference("full") == "true",
     sound: getPreference("sound") == "true",
     python: getPreference("python") == "true",
@@ -244,41 +253,45 @@ var paused = false;
 
 const modulenames = ["python.runpy", "pynsights.pynsights.cli", "python.pkgutil", "python.zipimport", "python.importlib", "pynsights.pynsights", "pynsights.example", "python.importlib", "pynsights.hello", "pynsights.hello.helloworld", "pynsights.hello.hello", "pynsights.hello.world", "python.functools", "python.threading"] // [];
 const callsites = [[1, 0], [0, 2], [2, 3], [3, 4], [2, 4], [0, 5], [0, 6], [6, 7], [7, 4], [4, 7], [7, 8], [4, 3], [7, 9], [9, 7], [7, 10], [7, 11], [6, 5], [5, 12], [5, 6], [6, 9], [9, 10], [9, 11], [1, 5], [5, 13]] // [];
-const calls = [[198, 19, 1], [198, 20, 1], [198, 21, 1], [299, 19, 1], [299, 20, 1], [299, 21, 1], [399, 19, 1], [399, 20, 1], [400, 21, 1], [503, 19, 1], [503, 20, 1], [503, 21, 1], [605, 19, 1], [605, 20, 1], [605, 21, 1], [708, 19, 1], [708, 20, 1], [708, 21, 1], [813, 19, 1], [813, 20, 1], [813, 21, 1], [916, 19, 1], [916, 20, 1], [916, 21, 1], [1021, 19, 1], [1021, 20, 1], [1021, 21, 1], [1122, 19, 1], [1122, 20, 1], [1122, 21, 1]] // [];
-const cpus = [[7, 0.0, 10.5], [735, 2.6, 5.1], [1230, 0.1, 4.8]] // [];
+const calls = [[252, 19, 1], [252, 20, 1], [252, 21, 1], [357, 19, 1], [357, 20, 1], [357, 21, 1], [459, 19, 1], [459, 20, 1], [459, 21, 1], [559, 19, 1], [559, 20, 1], [559, 21, 1], [661, 19, 1], [661, 20, 1], [661, 21, 1], [761, 19, 1], [761, 20, 1], [761, 21, 1], [861, 19, 1], [861, 20, 1], [861, 21, 1], [962, 19, 1], [962, 20, 1], [962, 21, 1], [1062, 19, 1], [1062, 20, 1], [1062, 21, 1], [1167, 19, 1], [1167, 20, 1], [1167, 21, 1]] // [];
+const cpus = [[9, 0.0, 15.0], [755, 2.7, 10.5], [1256, 0.0, 9.1], [1273, 2.1, 14.3]] // [];
 const memories = [
     [
-        7,
-        21594112.0
+        9,
+        21864448.0
     ],
     [
-        735,
-        26492928.0
+        755,
+        27013120.0
     ],
     [
-        1230,
-        26497024.0
+        1256,
+        27017216.0
+    ],
+    [
+        1273,
+        27017216.0
     ]
 ] // [];
 const types = ["member_descriptor", "enum.EnumMeta", "function", "frozenset", "getset_descriptor", "int", "method_descriptor", "weakref", "abc.ABCMeta", "builtin_function_or_method", "wrapper_descriptor", "set", "_io.BufferedReader", "tuple", "_io.BufferedWriter", "list", "code", "type", "dict", "str", "Total#Heap#Size#and#Count"] // [];
 const heap = [
-    [1230, [[0, 372, 23808], [1, 29, 30688], [2, 247, 33592], [3, 105, 36248], [4, 626, 40064], [5, 2182, 65672], [6, 936, 67392], [7, 1093, 78696], [8, 80, 80544], [9, 1140, 82080], [10, 1223, 88056], [11, 110, 100560], [12, 1, 131240], [13, 3023, 174848], [14, 3, 266744], [15, 3189, 312928], [16, 4112, 728489], [17, 869, 734728], [18, 2950, 1494024], [19, 16554, 1714439], [20, 45856, 7016220]]]
+    [1273, [[0, 372, 23808], [1, 29, 30688], [2, 247, 33592], [3, 105, 36248], [4, 626, 40064], [5, 2182, 65672], [6, 936, 67392], [7, 1093, 78696], [8, 80, 80544], [9, 1140, 82080], [10, 1223, 88056], [11, 110, 100560], [12, 1, 131240], [13, 3023, 174848], [14, 3, 266744], [15, 3189, 312928], [16, 4112, 728489], [17, 869, 735304], [18, 2951, 1493680], [19, 16557, 1714652], [20, 45860, 7016665]]]
 ] // [];
 const gcs = [
-    [100, 1, 0, 0],
-    [231, 0, 0, 0],
-    [231, 0, 0, 0],
-    [231, 0, 0, 0],
-    [231, 0, 0, 0],
-    [1230, 4, 0, 0],
-    [1233, 3, 6, 0],
-    [1492, 0, 0, 0],
-    [1492, 0, 0, 0],
-    [1493, 0, 0, 0],
-    [1493, 0, 0, 0]
+    [102, 0, 0, 0],
+    [251, 0, 0, 0],
+    [251, 0, 0, 0],
+    [251, 0, 0, 0],
+    [251, 0, 0, 0],
+    [1273, 4, 0, 0],
+    [1277, 3, 6, 0],
+    [1554, 1, 0, 0],
+    [1554, 0, 0, 0],
+    [1554, 0, 0, 0],
+    [1554, 0, 0, 0]
 ] // [];
-const annotations = [[198, "Enter __main__.run"], [198, "helloworld - 1"], [299, "helloworld - 2"], [399, "helloworld - 3"], [503, "helloworld - 4"], [605, "helloworld - 5"], [708, "helloworld - 6"], [813, "helloworld - 7"], [916, "helloworld - 8"], [1021, "helloworld - 9"], [1122, "helloworld - 10"], [1230, "Exit __main__.run"]] // [];
-const programDuration = 1230 // 1;
+const annotations = [[252, "Enter __main__.run"], [252, "helloworld - 1"], [357, "helloworld - 2"], [459, "helloworld - 3"], [559, "helloworld - 4"], [661, "helloworld - 5"], [761, "helloworld - 6"], [861, "helloworld - 7"], [962, "helloworld - 8"], [1062, "helloworld - 9"], [1167, "helloworld - 10"], [1273, "Exit __main__.run"]] // [];
+const programDuration = 1273 // 1;
 
 const memoryScores = {};
 const cpuScores = {};
@@ -298,7 +311,12 @@ function getColor(group) {
 }
 
 const SHORT_RUN = 5000;
-const playSectionDuration = programDuration > SHORT_RUN ? 50 : 1;
+const SPEED = {
+    "slow": 0.1,
+    "normal": 1.0,
+    "fast": 100.0,
+}
+const playSectionDuration = programDuration > SHORT_RUN ? 50 * SPEED[settings.speed] : 1;
 var playChunkDelay = 50;
 
 $(window).resize(() => window.location.reload());
@@ -355,12 +373,10 @@ String.prototype.hashCode = function() {
 function addCallsToTimeline(index) {
     if (index >= calls.length) return;
     const end = Math.min(calls.length, index + programDuration / $("#timeline").width());
-    console.log("add calls", index, end)
     var markersToAdd = 11;
     while (index < end) {
         if (markersToAdd-- > 0) {
             try {
-                console.log("   add", index)
                 addCallToTimeline(calls[index], index);
             } catch(e) {
                 console.log("Cannot add call", index, calls.length, e);
@@ -483,13 +499,12 @@ function getX(when) {
     return Math.round((when - firstWhen) * ($("#timeline").width() - 24) / (programDuration - firstWhen)) + 12;
 }
 
-function updateTimeline(call) {
+function updateTimeline(call, duration) {
     if (!call) return;
     const [when, callsite, count] = call;
-    $("#timelinehandle")
-        .css("left", getX(when));
+    $("#timelinehandle,#timelinetime")
+        .animate({ left: getX(when) }, duration);
     $("#timelinetime")
-        .css("left", getX(when))
         .text(`${toHourMinSec(when)}`)
 }
 
@@ -653,6 +668,11 @@ $("#level")
     .val(settings.level)
     .on("change", () => {
         reloadWith("level", $("#level").val());
+    });
+$("#speed")
+    .val(settings.speed)
+    .on("change", () => {
+        reloadWith("speed", $("#speed").val());
     });
 $("#python")
     .prop("checked", settings.python)
@@ -954,7 +974,7 @@ function getTimeMillis() {
 }
 
 function initTimeline() {
-    updateTimeline(calls[playIndex]);
+    updateTimeline(calls[playIndex], 0);
     annotateTimeline(0);
     addCallsToTimeline(0);
     addCpuScoresToTimeline();
@@ -990,6 +1010,7 @@ function playCalls() {
     if (playIndex == 0) resetLinkCounts();
     const clockStart = getTimeMillis();
     const whenStart = getWhen(playIndex);
+    var clockDuration = 0;
     function playChunk() {
         if (!isPlaying()) return;
         const chunkEnd = findChunkEnd(playIndex);
@@ -1002,17 +1023,18 @@ function playCalls() {
             stopPlaying();
         } 
         else {
-            const clockNow = getTimeMillis();
+            const clockNow = getTimeMillis();1
             const whenNow = getWhen(playIndex);
-            const clockDuration = clockNow - clockStart;
+            clockDuration = clockNow - clockStart;
             const whenDuration = whenNow - whenStart;
-            playChunkDelay = Math.min(500, Math.max(1, whenDuration - clockDuration));
+            const duration = whenDuration - clockDuration;
+            playChunkDelay = duration / SPEED[settings.speed];
             if (programDuration < 1000) {
                 playChunkDelay += 1000;
             }
             setTimeout(playChunk, playChunkDelay)
         }
-        updateTimeline(calls[playIndex]);
+        updateTimeline(calls[playIndex], playChunkDelay);
     }
     setTimeout(playChunk, 1);
 }
