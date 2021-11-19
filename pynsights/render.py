@@ -24,16 +24,29 @@ last_call = {}
 when = 0
 
 template_file = __file__.replace("render.py", "index.html")
+filler = " " * 40
 
 
 def show_progress(percent, end=""):
-    print(f"\r{percent}% done - {total_calls} calls processed", end=end)
+    print(f"\r - {percent}% done - {total_calls:,} calls processed", filler, end=end)
+
+
+def format_bytes(size):
+    power = 2**10
+    if size < power:
+        return f"{size} bytes"
+    n = 0
+    power_labels = {0 : '', 1: 'K', 2: 'M', 3: 'G', 4: 'T'}
+    while size > power:
+        size /= power
+        n += 1
+    return f"{round(size)}{power_labels[n]}B"
 
 
 def read_dump(input_file):
     done = 0
     print(f"Loading {input_file}")
-    print(f"Dump size: {os.path.getsize(input_file)} bytes.")
+    print(f" - Dump size: {format_bytes(os.path.getsize(input_file))}")
     with open(input_file) as fp:
         lines = fp.readlines()
         one_percent = round(len(lines) / 100)
@@ -47,7 +60,7 @@ def read_dump(input_file):
                 show_progress(done)
                 done += 1
         flush_call_sites()
-    print(f"\rThis trace contains {total_calls} calls.")
+    print(f"\r - Number of calls: {total_calls:,}", filler)
 
 
 def flush_call_sites():
@@ -150,11 +163,11 @@ def generate(output):
         .replace("/*MEMORIES*/", json.dumps(memories, indent=4) + " //")
     with open(output, "w") as fout:
         fout.write(html)
-    print("Rendered output has been saved in", output)
+    print(" - Output file:", output, filler)
 
 
 def open_ui(output):
-    print("Opening", output)
+    print("Opening output now")
     webbrowser.open("file://" + str(output.resolve()))
 
 
@@ -163,9 +176,8 @@ def render(input_file, output=None, open_browser=False):
     read_dump(input_file)
     if output is None:
         output = input_file.with_suffix(".html")
-    print("Read trace file in", time.time() - start, "s")
+    print(" - Processing time:", f"{time.time() - start:.1f}s", filler)
     start = time.time()
     generate(output)
-    print("Generated output in", time.time() - start, "s")
     if open_browser:
         open_ui(pathlib.Path(output))
