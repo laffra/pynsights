@@ -28,22 +28,22 @@ COUNT = 10
 ENABLE_REMOTE_CONTROL = False
 
 
-@pynsights.trace
 def say_hello(n):
-    pynsights.annotate("helloworld - %d" % n)
     helloworld()  
     print(f"\rExample: Run Hello World - {10 - n}", end="")
 
 
 def run():
+    pynsights.annotate("start")
+
     print("-" * 50)
-    print("Example: Run Hello World", COUNT, "times.")
     for n in range(1, COUNT + 1):
         say_hello(n)
-        time.sleep(0.1)
         gc.collect()
-    print("\nExample: Done.")
     print("-" * 50)
+
+    pynsights.annotate("end")
+
     run_forever()
 
 
