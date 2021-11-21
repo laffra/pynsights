@@ -60,11 +60,11 @@ def parse_lines(lines):
         try:
             handle_line(line)
         except Exception as e:
-            print(f"Error handling line: '{line}'")
-            print(e)
+            print(f"Error handling line: '{line}': {e}")
         if not one_percent or n % one_percent == 0:
             show_progress(done)
             done += 1
+    show_progress(100)
     flush_call_sites()
 
 
@@ -109,7 +109,9 @@ def add_call(when, callsite):
 
 def handle_line(line):
     global last_when, when
-    items = line[:-1].split()
+    if not line:
+        return
+    items = line.replace("\n", "").split()
     kind = int(items[0])
     if kind == EVENT_MODULE:
         _, module = items
@@ -200,8 +202,9 @@ def render(input_file, output=None, open_browser=False):
 
 def render_remote(url, output, open_browser=False):
     start = time.time()
-    trace = urllib.urlopen(url).read()
-    parse_lines(trace.split("\n"))
+    trace = urllib.request.urlopen(url).read()
+    print("Retrieved external trace dump:", len(trace), "bytes")
+    parse_lines(trace.decode('utf-8').split("\n"))
     print(" - Processing time:", f"{time.time() - start:.1f}s", filler)
     generate(output)
     if open_browser:

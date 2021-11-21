@@ -68,9 +68,8 @@ def get_parser() -> argparse.ArgumentParser:
     remote_parser.add_argument("-c", "--cancel", dest="cancel", action="store_true", help="Cancel recording.")
     remote_parser.add_argument("-r", "--render", dest="render", action="store_true", help="Render the latest recording.")
     remote_parser.add_argument("-x", "--exit", dest="exit", action="store_true", help="Exit the remote process.")
-    remote_parser.add_argument("-w", "--browser", "--open", dest="browser", action="store_true", help="Open the HTML file in your default browser.")
-    render_parser.add_argument("host", help="The hostname for the remote process.")
-    render_parser.add_argument("port", help="The port number for the remote process.")
+    remote_parser.add_argument("-w", "--browser", dest="browser", action="store_true", help="Open the HTML file in your default browser.")
+    remote_parser.add_argument("host_details", nargs="+", help="The hostname and port number for the remote process.")
 
     return parser
 
@@ -92,18 +91,18 @@ def do_render(input_file, output_file, open_browser):
     render(input_file, output_file, open_browser)
 
 
-def do_remote(host, port, start=False, cancel=False, render=False, exit=False, open_browser=False):
+def do_remote(host_details, start=False, cancel=False, render=False, exit=False, open_browser=False):
+    host_name, port_number = host_details
     url = f"http://{host_name}:{port_number}/"
     if render:
-        with tempfile.TemporaryDirectory() as tmpdir:
-            output = Path(tmpdir, "trace.txt")
-            render_remote(url + "render", output, open_browser)
+        output = Path(tempfile.gettempdir(), "trace.html")
+        render_remote(url + "trace", output, open_browser)
     elif start:
-        print(urllib.urlopen(url + "start").read())
+        print(urllib.request.urlopen(url + "start").read())
     elif cancel:
-        print(urllib.urlopen(url + "stop").read())
+        print(urllib.request.urlopen(url + "stop").read())
     elif exit:
-        print(urllib.urlopen(url + "exit").read())
+        print(urllib.request.urlopen(url + "exit").read())
 
 
 def do_run(command, output=None, open_browser=False):
@@ -142,7 +141,7 @@ def main(args: list[str] | None = None) -> int:
         return 0
 
     if opts.command == "remote":
-        do_remote(opts.host, opts.port, opts.start, opts.cancel, opts.render, opts.exit, opts.browser)
+        do_remote(opts.host_details, opts.start, opts.cancel, opts.render, opts.exit, opts.browser)
         return 0
     
     if opts.command:
