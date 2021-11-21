@@ -251,47 +251,51 @@ var playIndex = settings.time;
 var timelineMarkerCount = 0;
 var paused = false;
 
-const modulenames = ["python.runpy", "pynsights.pynsights.cli", "python.pkgutil", "python.zipimport", "python.importlib", "pynsights.pynsights", "pynsights.example", "python.importlib", "pynsights.hello", "pynsights.hello.helloworld", "pynsights.hello.hello", "pynsights.hello.world", "python.functools", "python.threading"] // [];
-const callsites = [[1, 0], [0, 2], [2, 3], [3, 4], [2, 4], [0, 5], [0, 6], [6, 7], [7, 4], [4, 7], [7, 8], [4, 3], [7, 9], [9, 7], [7, 10], [7, 11], [6, 5], [5, 12], [5, 6], [6, 9], [9, 10], [9, 11], [1, 5], [5, 13]] // [];
-const calls = [[252, 19, 1], [252, 20, 1], [252, 21, 1], [357, 19, 1], [357, 20, 1], [357, 21, 1], [459, 19, 1], [459, 20, 1], [459, 21, 1], [559, 19, 1], [559, 20, 1], [559, 21, 1], [661, 19, 1], [661, 20, 1], [661, 21, 1], [761, 19, 1], [761, 20, 1], [761, 21, 1], [861, 19, 1], [861, 20, 1], [861, 21, 1], [962, 19, 1], [962, 20, 1], [962, 21, 1], [1062, 19, 1], [1062, 20, 1], [1062, 21, 1], [1167, 19, 1], [1167, 20, 1], [1167, 21, 1]] // [];
-const cpus = [[9, 0.0, 15.0], [755, 2.7, 10.5], [1256, 0.0, 9.1], [1273, 2.1, 14.3]] // [];
+const modulenames = ["python.runpy", "pynsights.pynsights.cli", "python.pkgutil", "python.zipimport", "python.importlib", "pynsights.example", "python.importlib", "pynsights.hello", "pynsights.hello.helloworld", "pynsights.hello.hello", "pynsights.hello.world", "pynsights.pynsights.record", "python.functools", "python.threading"] // [];
+const callsites = [[1, 0], [0, 2], [2, 3], [3, 4], [2, 4], [0, 5], [5, 6], [6, 4], [4, 6], [6, 7], [4, 3], [6, 8], [8, 6], [6, 9], [6, 10], [5, 11], [11, 12], [11, 5], [5, 8], [8, 9], [8, 10], [1, 11], [11, 13]] // [];
+const calls = [[229, 18, 1], [229, 19, 1], [229, 20, 1], [332, 18, 1], [332, 19, 1], [332, 20, 1], [435, 18, 1], [435, 19, 1], [435, 20, 1], [542, 18, 1], [542, 19, 1], [542, 20, 1], [647, 18, 1], [647, 19, 1], [647, 20, 1], [750, 18, 1], [750, 19, 1], [750, 20, 1], [853, 18, 1], [853, 19, 1], [853, 20, 1], [960, 18, 1], [960, 19, 1], [960, 20, 1], [1065, 18, 1], [1065, 19, 1], [1065, 20, 1], [1168, 18, 1], [1168, 19, 1], [1168, 20, 1]] // [];
+const cpus = [[16, 0.0, 23.3], [789, 3.1, 19.9], [1276, 0.3, 17.4]] // [];
 const memories = [
     [
-        9,
-        21864448.0
+        16,
+        23359488.0
     ],
     [
-        755,
-        27013120.0
+        789,
+        27791360.0
     ],
     [
-        1256,
-        27017216.0
-    ],
-    [
-        1273,
-        27017216.0
+        1276,
+        27791360.0
     ]
 ] // [];
-const types = ["member_descriptor", "enum.EnumMeta", "function", "frozenset", "getset_descriptor", "int", "method_descriptor", "weakref", "abc.ABCMeta", "builtin_function_or_method", "wrapper_descriptor", "set", "_io.BufferedReader", "tuple", "_io.BufferedWriter", "list", "code", "type", "dict", "str", "Total#Heap#Size#and#Count"] // [];
+const types = ["member_descriptor", "enum.EnumMeta", "function", "frozenset", "getset_descriptor", "method_descriptor", "int", "weakref", "abc.ABCMeta", "builtin_function_or_method", "wrapper_descriptor", "set", "_io.BufferedReader", "tuple", "_io.BufferedWriter", "list", "code", "type", "dict", "str", "Total#Heap#Size#and#Count"] // [];
 const heap = [
-    [1273, [[0, 372, 23808], [1, 29, 30688], [2, 247, 33592], [3, 105, 36248], [4, 626, 40064], [5, 2182, 65672], [6, 936, 67392], [7, 1093, 78696], [8, 80, 80544], [9, 1140, 82080], [10, 1223, 88056], [11, 110, 100560], [12, 1, 131240], [13, 3023, 174848], [14, 3, 266744], [15, 3189, 312928], [16, 4112, 728489], [17, 869, 735304], [18, 2951, 1493680], [19, 16557, 1714652], [20, 45860, 7016665]]]
+    [1276, [[0, 372, 23808], [1, 29, 30688], [2, 253, 34408], [3, 106, 36464], [4, 637, 40768], [5, 936, 67392], [6, 2242, 67480], [7, 1118, 80496], [8, 81, 81608], [9, 1140, 82080], [10, 1223, 88056], [11, 110, 100560], [12, 1, 131240], [13, 3165, 182976], [14, 3, 266744], [15, 4105, 393880], [16, 4229, 749514], [17, 893, 760264], [18, 3022, 1634872], [19, 18087, 1833616], [20, 48899, 7434638]]]
 ] // [];
 const gcs = [
-    [102, 0, 0, 0],
-    [251, 0, 0, 0],
-    [251, 0, 0, 0],
-    [251, 0, 0, 0],
-    [251, 0, 0, 0],
-    [1273, 4, 0, 0],
-    [1277, 3, 6, 0],
-    [1554, 1, 0, 0],
-    [1554, 0, 0, 0],
-    [1554, 0, 0, 0],
-    [1554, 0, 0, 0]
+    [285, 1, 0, 0],
+    [285, 0, 0, 0],
+    [285, 0, 0, 0],
+    [285, 0, 0, 0],
+    [332, 3, 0, 0],
+    [435, 2, 0, 0],
+    [542, 3, 0, 0],
+    [647, 3, 0, 0],
+    [750, 3, 0, 0],
+    [853, 2, 0, 0],
+    [960, 3, 0, 0],
+    [1065, 4, 0, 0],
+    [1168, 3, 0, 0],
+    [1276, 3, 0, 0],
+    [1279, 3, 9, 0],
+    [1560, 1, 0, 0],
+    [1560, 0, 0, 0],
+    [1560, 0, 0, 0],
+    [1560, 0, 0, 0]
 ] // [];
-const annotations = [[252, "Enter __main__.run"], [252, "helloworld - 1"], [357, "helloworld - 2"], [459, "helloworld - 3"], [559, "helloworld - 4"], [661, "helloworld - 5"], [761, "helloworld - 6"], [861, "helloworld - 7"], [962, "helloworld - 8"], [1062, "helloworld - 9"], [1167, "helloworld - 10"], [1273, "Exit __main__.run"]] // [];
-const programDuration = 1273 // 1;
+const annotations = [[228, "Enter __main__.say_hello"], [229, "helloworld - 1"], [229, "Exit __main__.say_hello"], [332, "Enter __main__.say_hello"], [332, "helloworld - 2"], [332, "Exit __main__.say_hello"], [435, "Enter __main__.say_hello"], [435, "helloworld - 3"], [435, "Exit __main__.say_hello"], [542, "Enter __main__.say_hello"], [542, "helloworld - 4"], [542, "Exit __main__.say_hello"], [647, "Enter __main__.say_hello"], [647, "helloworld - 5"], [647, "Exit __main__.say_hello"], [750, "Enter __main__.say_hello"], [750, "helloworld - 6"], [750, "Exit __main__.say_hello"], [853, "Enter __main__.say_hello"], [853, "helloworld - 7"], [853, "Exit __main__.say_hello"], [960, "Enter __main__.say_hello"], [960, "helloworld - 8"], [960, "Exit __main__.say_hello"], [1065, "Enter __main__.say_hello"], [1065, "helloworld - 9"], [1065, "Exit __main__.say_hello"], [1168, "Enter __main__.say_hello"], [1168, "helloworld - 10"], [1168, "Exit __main__.say_hello"]] // [];
+const programDuration = 1276 // 1;
 
 const memoryScores = {};
 const cpuScores = {};

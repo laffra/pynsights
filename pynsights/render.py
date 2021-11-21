@@ -74,6 +74,7 @@ MODULES_TO_SKIP = {
     "pynsights",
     "pynsights.pynsights",
     "pynsights.pynsights.cli",
+    "pynsights.pynsights.record",
     "python.runpy",
     "python.zipimport",
 }
@@ -163,7 +164,7 @@ def generate(output):
         .replace("/*MEMORIES*/", json.dumps(memories, indent=4) + " //")
     with open(output, "w") as fout:
         fout.write(html)
-    print(" - Output file:", output, filler)
+    print(" - Output file:", output, f"{format_bytes(os.path.getsize(output))}", filler)
 
 
 def open_ui(output):
