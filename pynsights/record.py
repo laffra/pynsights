@@ -63,7 +63,7 @@ tracing = False
 metrics_monitor = None
 gc_start = 0
 last_when = 0
-
+HOTSPOT_CALL_DURATION = 100
 
 def get_output():
     return output_filename
@@ -158,16 +158,25 @@ def record(when, line):
 
 def process_call(frame, event, _):
     global call_count, last_flush
+    if event in ["c_call", "c_return"]:
+        return
     try:
+        source, target = extract_call(frame)
+        callsite = get_callsite_index(source, target)
+        now = time.time()
+        when = round((now - start) * 1000)
         if event == "call":
-            source, target = extract_call(frame)
-            now = time.time()
-            when = round((now - start) * 1000)
-            record(when, "%s %s\n" % (EVENT_CALL, get_callsite_index(source, target)))
+            frame.f_locals["__pynsights__when__"] = when
+            record(when, "%s %s\n" % (EVENT_CALL, callsite))
             call_count += 1
             if now - last_flush > FLUSH_INTERVAL:
                 flush()
                 last_flush = now
+        elif event == "return":
+            duration = when - frame.f_locals.get("__pynsights__when__", when)
+            if duration > HOTSPOT_CALL_DURATION:
+                record(when, "%s %s %s %s\n" % (EVENT_RETURN, callsite, duration, frame.f_code.co_name))
+
     except AttributeError:
         pass # happens for bootstrap calls only
     except SkipCall:

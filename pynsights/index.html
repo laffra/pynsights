@@ -166,6 +166,12 @@
             border: 0px solid rgb(85, 85, 85);
             border-left-width: 1px;
         }
+        .span{
+            position: absolute;
+            color: black;
+            padding: 3px;
+            top: 200px;
+        }
     </style>
     <body>
         <div id="graph-container">
@@ -260,6 +266,7 @@ const types = /*TYPES*/ [];
 const heap = /*HEAP*/ [];
 const gcs = /*GC*/ [];
 const annotations = /*ANNOTATIONS*/ [];
+const spans = /*SPANS*/ [];
 const programDuration = /*DURATION*/ 1;
 
 const memoryScores = {};
@@ -465,7 +472,8 @@ function indexHeap() {
 
 function getX(when) {
     const firstWhen = calls[0][0];
-    return Math.round((when - firstWhen) * ($("#timeline").width() - 24) / (programDuration - firstWhen)) + 12;
+    const x = Math.round((when - firstWhen) * ($("#timeline").width() - 24) / (programDuration - firstWhen)) + 12;
+    return x;
 }
 
 function updateTimeline(call, duration) {
@@ -475,6 +483,38 @@ function updateTimeline(call, duration) {
         .animate({ left: getX(when) }, duration);
     $("#timelinetime")
         .text(`${toHourMinSec(when)}`)
+}
+
+function drawSpans(index) {
+    if (index >= spans.length) return;
+    const end = Math.min(spans.length, index + 10);
+    while (index < end) {
+        const [when, callsite, duration, codename] = spans[index++];
+        const [sourceIndex, targetIndex] = callsites[callsite];
+        const source = modulenames[sourceIndex];
+        const target = modulenames[targetIndex];
+        const x = getX(when);
+        const width = getX(when + duration) - x;
+        var y = 180;
+        $(".span").each(function() {
+            const span = $(this);
+            if (x < $(this).css("left") + $(this).width()) {
+                y += 20;
+            }
+        })
+        $("<div>")
+            .addClass("span")
+            .css({
+                backgroundColor: getColor(getGroupName(targetIndex)),
+                left: x,
+                top: y,
+                width: width - 7,
+            })
+            .attr("title", `${codename} ${duration}ms ${source} => ${target}`)
+            .text(`${codename} ${duration}ms`)
+            .appendTo($("body"));
+    }
+    setTimeout(function() { drawSpans(index); }, 1);
 }
 
 function annotateTimeline(index) {
@@ -944,6 +984,7 @@ function getTimeMillis() {
 
 function initTimeline() {
     updateTimeline(calls[playIndex], 0);
+    drawSpans(0);
     annotateTimeline(0);
     addCallsToTimeline(0);
     addCpuScoresToTimeline();

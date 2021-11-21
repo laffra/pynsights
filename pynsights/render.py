@@ -19,7 +19,8 @@ heap = []
 gcs = []
 memories = []
 annotations = []
-duration = 0
+spans = []
+last_when = 0
 last_call = {}
 when = 0
 
@@ -99,9 +100,10 @@ def add_call(when, callsite):
         if when - lastWhen > 500:
             calls.append((lastWhen, callsite, count))
     last_call[callsite] = when, count + 1
+    source, target = callsites[callsite]
 
 def handle_line(line):
-    global duration, when
+    global last_when, when
     items = line[:-1].split()
     kind = int(items[0])
     if kind == EVENT_MODULE:
@@ -128,36 +130,43 @@ def handle_line(line):
     elif kind == EVENT_CALL:
         callsite = int(items[1])
         add_call(when, callsite)
-        duration = when
+        last_when = when
+    elif kind == EVENT_RETURN:
+        callsite, duration, codename = int(items[1]), int(items[2]), items[3]
+        spans.append([when, callsite, duration, codename])
+        last_when = when
+        flush_call_sites()
     elif kind == EVENT_ANNOTATE:
         message = " ".join(items[1:])
         annotations.append((when, message))
-        duration = when
+        last_when = when
         flush_call_sites()
     elif kind == EVENT_ENTER:
         message = " ".join(items[1:])
         annotations.append((when, f"Enter {message}"))
-        duration = when
+        last_when = when
         flush_call_sites()
     elif kind == EVENT_EXIT:
         message = " ".join(items[1:])
         annotations.append((when, f"Exit {message}"))
-        duration = when
+        last_when = when
         flush_call_sites()
     elif kind == EVENT_TIMESTAMP:
         when = int(items[1])
+        last_when = when
 
 
 def generate(output):
     with open(template_file) as fin:
         template = fin.read()
     html = template\
-        .replace("/*DURATION*/", str(duration) + " //") \
+        .replace("/*DURATION*/", str(last_when) + " //") \
         .replace("/*MODULENAMES*/", json.dumps(modulenames) + " //") \
         .replace("/*CALLSITES*/", json.dumps(callsites) + " //") \
         .replace("/*CALLS*/", json.dumps(calls) + " //") \
         .replace("/*CPUS*/", json.dumps(cpus) + " //") \
-        .replace("/*ANNOTATIONS*/", json.dumps(annotations) + " //") \
+        .replace("/*ANNOTATIONS*/", json.dumps(annotations, indent=4) + " //") \
+        .replace("/*SPANS*/", json.dumps(spans, indent=4) + " //") \
         .replace("/*HEAP*/", "[\n    " + ",\n    ".join(json.dumps(snapshot) for snapshot in heap) + "\n] //") \
         .replace("/*GC*/", "[\n    " + ",\n    ".join(json.dumps(gc) for gc in gcs) + "\n] //") \
         .replace("/*TYPES*/", json.dumps(typenames) + " //") \
