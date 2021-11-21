@@ -6,6 +6,7 @@ import json
 import pathlib
 import webbrowser
 import os
+import urllib
 import time
 from pynsights.constants import *
 
@@ -45,23 +46,26 @@ def format_bytes(size):
 
 
 def read_dump(input_file):
-    done = 0
     print(f"Loading {input_file}")
     print(f" - Dump size: {format_bytes(os.path.getsize(input_file))}")
     with open(input_file) as fp:
-        lines = fp.readlines()
-        one_percent = round(len(lines) / 100)
-        for n, line in enumerate(lines):
-            try:
-                handle_line(line)
-            except Exception as e:
-                print(f"Error handling line: '{line}'")
-                print(e)
-            if not one_percent or n % one_percent == 0:
-                show_progress(done)
-                done += 1
-        flush_call_sites()
+        parse_lines(fp.readlines())
     print(f"\r - Number of calls: {total_calls:,}", filler)
+
+
+def parse_lines(lines):
+    done = 0
+    one_percent = round(len(lines) / 100)
+    for n, line in enumerate(lines):
+        try:
+            handle_line(line)
+        except Exception as e:
+            print(f"Error handling line: '{line}'")
+            print(e)
+        if not one_percent or n % one_percent == 0:
+            show_progress(done)
+            done += 1
+    flush_call_sites()
 
 
 def flush_call_sites():
@@ -76,6 +80,7 @@ MODULES_TO_SKIP = {
     "pynsights.pynsights",
     "pynsights.pynsights.cli",
     "pynsights.pynsights.record",
+    "pynsights.record",
     "python.runpy",
     "python.zipimport",
 }
@@ -133,7 +138,8 @@ def handle_line(line):
         last_when = when
     elif kind == EVENT_RETURN:
         callsite, duration, codename = int(items[1]), int(items[2]), items[3]
-        spans.append([when, callsite, duration, codename])
+        if not skip_call(callsite):
+            spans.append([when - duration, callsite, duration, codename])
         last_when = when
         flush_call_sites()
     elif kind == EVENT_ANNOTATE:
@@ -187,7 +193,16 @@ def render(input_file, output=None, open_browser=False):
     if output is None:
         output = input_file.with_suffix(".html")
     print(" - Processing time:", f"{time.time() - start:.1f}s", filler)
+    generate(output)
+    if open_browser:
+        open_ui(pathlib.Path(output))
+
+
+def render_remote(url, output, open_browser=False):
     start = time.time()
+    trace = urllib.urlopen(url).read()
+    parse_lines(trace.split("\n"))
+    print(" - Processing time:", f"{time.time() - start:.1f}s", filler)
     generate(output)
     if open_browser:
         open_ui(pathlib.Path(output))

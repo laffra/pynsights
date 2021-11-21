@@ -168,9 +168,11 @@
         }
         .span{
             position: absolute;
+            overflow: hidden;
             color: black;
             padding: 3px;
             top: 200px;
+            border: 1px solid black;
         }
     </style>
     <body>
@@ -206,6 +208,9 @@
                 <option name="fast">fast</option>
             </select>
 
+            <input type="checkbox" id="flame"></input>
+            <label for="flame">Flame</label>
+
             <input type="checkbox" id="python"></input>
             <label for="python">Python</label>
 
@@ -240,6 +245,7 @@ const settings = {
     speed: getPreference("speed") || "normal",
     full: getPreference("full") == "true",
     sound: getPreference("sound") == "true",
+    flame: getPreference("flame") == "true",
     python: getPreference("python") == "true",
     focus: getPreference("focus"),
     time: parseInt(getPreference("time") || "0"),
@@ -258,148 +264,129 @@ var timelineMarkerCount = 0;
 var paused = false;
 
 const modulenames = ["pynsights.pynsights.record", "pynsights.pynsights.cli", "python.runpy", "python.pkgutil", "python.zipimport", "python.importlib", "pynsights.example", "python.importlib", "pynsights.hello", "pynsights.hello.helloworld", "pynsights.hello.hello", "pynsights.hello.world", "python.threading"] // [];
-const callsites = [[1, 0], [1, 2], [2, 3], [3, 4], [4, 5], [3, 5], [2, 0], [2, 6], [6, 7], [7, 5], [5, 7], [7, 8], [5, 4], [7, 9], [9, 7], [7, 10], [7, 11], [6, 0], [6, 9], [9, 10], [9, 11], [0, 12]] // [];
-const calls = [[266, 18, 1], [419, 19, 1], [419, 20, 1], [423, 18, 1], [577, 19, 1], [577, 20, 1], [583, 18, 1], [734, 19, 1], [734, 20, 1], [738, 18, 1], [892, 19, 1], [892, 20, 1], [896, 18, 1], [1048, 19, 1], [1048, 20, 1], [1053, 18, 1], [1205, 19, 1], [1205, 20, 1], [1208, 18, 1], [1359, 19, 1], [1359, 20, 1], [1362, 18, 1], [1514, 19, 1], [1514, 20, 1], [1518, 18, 1], [1671, 19, 1], [1671, 20, 1], [1674, 18, 1], [1826, 19, 1], [1826, 20, 1]] // [];
-const cpus = [[14, 0.0, 17.1], [805, 3.2, 11.5], [1306, 0.2, 12.7], [1810, 0.2, 15.4], [1829, 1.5, 10.5]] // [];
+const callsites = [[1, 0], [1, 2], [2, 3], [3, 4], [4, 5], [3, 5], [2, 6], [6, 7], [7, 5], [5, 7], [7, 8], [5, 4], [7, 9], [9, 7], [7, 10], [7, 11], [6, 0], [6, 9], [9, 10], [9, 11], [0, 12]] // [];
+const calls = [[262, 17, 1], [417, 18, 1], [417, 19, 1], [421, 17, 1], [575, 18, 1], [575, 19, 1], [580, 17, 1], [734, 18, 1], [734, 19, 1], [738, 17, 1], [891, 18, 1], [891, 19, 1], [895, 17, 1], [1047, 18, 1], [1047, 19, 1], [1052, 17, 1], [1206, 18, 1], [1206, 19, 1], [1210, 17, 1], [1365, 18, 1], [1365, 19, 1], [1369, 17, 1], [1524, 18, 1], [1524, 19, 1], [1530, 17, 1], [1684, 18, 1], [1684, 19, 1], [1688, 17, 1], [1839, 18, 1], [1839, 19, 1]] // [];
+const cpus = [[25, 0.0, 13.2], [829, 3.2, 11.4], [1334, 0.2, 9.6], [1834, 0.2, 9.0], [1843, 3.8, 25.0]] // [];
 const memories = [
     [
-        14,
-        22323200.0
+        25,
+        23068672.0
     ],
     [
-        805,
-        27062272.0
+        829,
+        27590656.0
     ],
     [
-        1306,
-        27062272.0
+        1334,
+        27590656.0
     ],
     [
-        1810,
-        27062272.0
+        1834,
+        27590656.0
     ],
     [
-        1829,
-        27066368.0
+        1843,
+        27590656.0
     ]
 ] // [];
 const types = ["member_descriptor", "enum.EnumMeta", "function", "frozenset", "getset_descriptor", "method_descriptor", "int", "weakref", "abc.ABCMeta", "builtin_function_or_method", "wrapper_descriptor", "set", "_io.BufferedReader", "tuple", "_io.BufferedWriter", "list", "code", "type", "dict", "str", "Total#Heap#Size#and#Count"] // [];
 const heap = [
-    [1829, [[0, 372, 23808], [1, 29, 30688], [2, 253, 34408], [3, 106, 36464], [4, 637, 40768], [5, 936, 67392], [6, 2247, 67620], [7, 1118, 80496], [8, 81, 81608], [9, 1140, 82080], [10, 1223, 88056], [11, 110, 100560], [12, 1, 131240], [13, 3165, 182976], [14, 3, 266744], [15, 4071, 391344], [16, 4229, 749654], [17, 893, 760840], [18, 3023, 1636952], [19, 18090, 1834101], [20, 48874, 7435523]]]
+    [1843, [[0, 372, 23808], [1, 29, 30688], [2, 253, 34408], [3, 106, 36464], [4, 637, 40768], [5, 936, 67392], [6, 2248, 67648], [7, 1118, 80496], [8, 81, 81608], [9, 1140, 82080], [10, 1223, 88056], [11, 110, 100560], [12, 1, 131240], [13, 3167, 183104], [14, 3, 266744], [15, 4126, 395720], [16, 4232, 750182], [17, 893, 760840], [18, 3040, 1641088], [19, 18151, 1837793], [20, 49029, 7449531]]]
 ] // [];
 const gcs = [
-    [93, 1, 0, 0],
-    [300, 0, 0, 0],
-    [300, 0, 0, 0],
-    [300, 0, 0, 0],
-    [300, 0, 0, 0],
-    [423, 3, 0, 0],
-    [583, 6, 0, 0],
+    [324, 1, 0, 0],
+    [324, 0, 0, 0],
+    [324, 0, 0, 0],
+    [324, 0, 0, 0],
+    [421, 4, 0, 0],
+    [580, 5, 0, 0],
     [738, 4, 0, 0],
-    [896, 4, 0, 0],
-    [1053, 5, 0, 0],
-    [1208, 3, 0, 0],
-    [1362, 3, 0, 0],
-    [1518, 3, 0, 0],
-    [1674, 3, 0, 0],
-    [1829, 3, 0, 0],
-    [1833, 4, 5, 0],
-    [2126, 1, 0, 0],
-    [2126, 0, 0, 0],
-    [2127, 0, 0, 0],
-    [2127, 0, 0, 0]
+    [895, 4, 0, 0],
+    [1052, 5, 0, 0],
+    [1210, 4, 0, 0],
+    [1369, 4, 0, 0],
+    [1530, 5, 0, 0],
+    [1688, 4, 0, 0],
+    [1843, 4, 0, 0],
+    [1848, 5, 5, 0],
+    [2156, 1, 0, 0],
+    [2156, 0, 0, 0],
+    [2156, 0, 0, 0],
+    [2156, 0, 0, 0]
 ] // [];
 const annotations = [
     [
-        266,
+        262,
         "start"
     ],
     [
-        1829,
+        1843,
         "end"
     ]
 ] // [];
 const spans = [
     [
-        266,
-        8,
-        167,
-        "_find_and_load"
-    ],
-    [
-        419,
-        18,
-        153,
+        262,
+        17,
+        155,
         "helloworld"
     ],
     [
-        577,
-        18,
+        421,
+        17,
         154,
         "helloworld"
     ],
     [
-        734,
-        18,
-        151,
-        "helloworld"
-    ],
-    [
-        892,
-        18,
+        580,
+        17,
         154,
         "helloworld"
     ],
     [
-        1048,
-        18,
-        152,
-        "helloworld"
-    ],
-    [
-        1205,
-        18,
-        152,
-        "helloworld"
-    ],
-    [
-        1359,
-        18,
-        151,
-        "helloworld"
-    ],
-    [
-        1514,
-        18,
-        152,
-        "helloworld"
-    ],
-    [
-        1671,
-        18,
+        738,
+        17,
         153,
         "helloworld"
     ],
     [
-        1826,
-        18,
+        895,
+        17,
         152,
         "helloworld"
     ],
     [
-        1829,
-        7,
-        1730,
-        "<module>"
+        1052,
+        17,
+        154,
+        "helloworld"
     ],
     [
-        1829,
-        1,
-        1786,
-        "run_path"
+        1210,
+        17,
+        155,
+        "helloworld"
+    ],
+    [
+        1369,
+        17,
+        155,
+        "helloworld"
+    ],
+    [
+        1530,
+        17,
+        154,
+        "helloworld"
+    ],
+    [
+        1688,
+        17,
+        151,
+        "helloworld"
     ]
 ] // [];
-const programDuration = 1829 // 1;
+const programDuration = 1843 // 1;
 
 const memoryScores = {};
 const cpuScores = {};
@@ -618,8 +605,10 @@ function updateTimeline(call, duration) {
 }
 
 function drawSpans(index) {
-    if (index >= spans.length) return;
-    const end = Math.min(spans.length, index + 10);
+    if (!settings.flame || index >= spans.length) return;
+    const end = Math.min(spans.length, index + 100);
+    var lastX = 0;
+    var lastY = 180;
     while (index < end) {
         const [when, callsite, duration, codename] = spans[index++];
         const [sourceIndex, targetIndex] = callsites[callsite];
@@ -627,14 +616,15 @@ function drawSpans(index) {
         const target = modulenames[targetIndex];
         const x = getX(when);
         const width = getX(when + duration) - x;
-        var y = 180;
-        $(".span").each(function() {
-            const span = $(this);
-            if (x < $(this).css("left") + $(this).width()) {
-                y += 20;
-            }
-        })
-        $("<div>")
+        console.log("span", x, width, lastX, x<lastX, lastY)
+        if (x < lastX) {
+            lastY += 20;
+        } else {
+            lastY = 180;
+        }
+        lastX = x + width;
+        var y = lastY;
+        const span = $("<div>")
             .addClass("span")
             .css({
                 backgroundColor: getColor(getGroupName(targetIndex)),
@@ -643,7 +633,7 @@ function drawSpans(index) {
                 width: width - 7,
             })
             .attr("title", `${codename} ${duration}ms ${source} => ${target}`)
-            .text(`${codename} ${duration}ms`)
+            .text(`${codename}`)
             .appendTo($("body"));
     }
     setTimeout(function() { drawSpans(index); }, 1);
@@ -651,7 +641,7 @@ function drawSpans(index) {
 
 function annotateTimeline(index) {
     if (index >= annotations.length) return;
-    const end = Math.min(annotations.length, index + 10);
+    const end = Math.min(annotations.length, index + 50);
     while (index < end) {
         annotateTimelineMarker(annotations[index++]);
     }
@@ -819,6 +809,11 @@ $("#python")
     .prop("checked", settings.python)
     .on("change", () => {
         reloadWith("python", $("#python").is(":checked"));
+    });
+$("#flame")
+    .prop("checked", settings.flame)
+    .on("change", () => {
+        reloadWith("flame", $("#flame").is(":checked"));
     });
 $("#sound")
     .prop("checked", settings.sound)

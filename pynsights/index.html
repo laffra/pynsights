@@ -168,9 +168,11 @@
         }
         .span{
             position: absolute;
+            overflow: hidden;
             color: black;
             padding: 3px;
             top: 200px;
+            border: 1px solid black;
         }
     </style>
     <body>
@@ -206,6 +208,9 @@
                 <option name="fast">fast</option>
             </select>
 
+            <input type="checkbox" id="flame"></input>
+            <label for="flame">Flame</label>
+
             <input type="checkbox" id="python"></input>
             <label for="python">Python</label>
 
@@ -240,6 +245,7 @@ const settings = {
     speed: getPreference("speed") || "normal",
     full: getPreference("full") == "true",
     sound: getPreference("sound") == "true",
+    flame: getPreference("flame") == "true",
     python: getPreference("python") == "true",
     focus: getPreference("focus"),
     time: parseInt(getPreference("time") || "0"),
@@ -486,8 +492,10 @@ function updateTimeline(call, duration) {
 }
 
 function drawSpans(index) {
-    if (index >= spans.length) return;
-    const end = Math.min(spans.length, index + 10);
+    if (!settings.flame || index >= spans.length) return;
+    const end = Math.min(spans.length, index + 100);
+    var lastX = 0;
+    var lastY = 180;
     while (index < end) {
         const [when, callsite, duration, codename] = spans[index++];
         const [sourceIndex, targetIndex] = callsites[callsite];
@@ -495,14 +503,15 @@ function drawSpans(index) {
         const target = modulenames[targetIndex];
         const x = getX(when);
         const width = getX(when + duration) - x;
-        var y = 180;
-        $(".span").each(function() {
-            const span = $(this);
-            if (x < $(this).css("left") + $(this).width()) {
-                y += 20;
-            }
-        })
-        $("<div>")
+        console.log("span", x, width, lastX, x<lastX, lastY)
+        if (x < lastX) {
+            lastY += 20;
+        } else {
+            lastY = 180;
+        }
+        lastX = x + width;
+        var y = lastY;
+        const span = $("<div>")
             .addClass("span")
             .css({
                 backgroundColor: getColor(getGroupName(targetIndex)),
@@ -511,7 +520,7 @@ function drawSpans(index) {
                 width: width - 7,
             })
             .attr("title", `${codename} ${duration}ms ${source} => ${target}`)
-            .text(`${codename} ${duration}ms`)
+            .text(`${codename}`)
             .appendTo($("body"));
     }
     setTimeout(function() { drawSpans(index); }, 1);
@@ -519,7 +528,7 @@ function drawSpans(index) {
 
 function annotateTimeline(index) {
     if (index >= annotations.length) return;
-    const end = Math.min(annotations.length, index + 10);
+    const end = Math.min(annotations.length, index + 50);
     while (index < end) {
         annotateTimelineMarker(annotations[index++]);
     }
@@ -687,6 +696,11 @@ $("#python")
     .prop("checked", settings.python)
     .on("change", () => {
         reloadWith("python", $("#python").is(":checked"));
+    });
+$("#flame")
+    .prop("checked", settings.flame)
+    .on("change", () => {
+        reloadWith("flame", $("#flame").is(":checked"));
     });
 $("#sound")
     .prop("checked", settings.sound)

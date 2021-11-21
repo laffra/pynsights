@@ -19,9 +19,10 @@ import tempfile
 from contextlib import suppress
 from pathlib import Path
 from runpy import run_module, run_path
+import urllib
 
 from pynsights import Recorder
-from pynsights.render import render
+from pynsights.render import render, render_remote
 
 
 def get_parser() -> argparse.ArgumentParser:
@@ -62,6 +63,15 @@ def get_parser() -> argparse.ArgumentParser:
     run_parser.add_argument("-o", "--output", type=Path, default=None, help="Output path of the final HTML file.")
     run_parser.add_argument("record_command", nargs="+", help="The Python script/module to run and its options.")
 
+    remote_parser = subparser("remote", "Live-connect to a remote Python program.")
+    remote_parser.add_argument("-s", "--start", dest="start", action="store_true", help="Start recording.")
+    remote_parser.add_argument("-c", "--cancel", dest="cancel", action="store_true", help="Cancel recording.")
+    remote_parser.add_argument("-r", "--render", dest="render", action="store_true", help="Render the latest recording.")
+    remote_parser.add_argument("-x", "--exit", dest="exit", action="store_true", help="Exit the remote process.")
+    remote_parser.add_argument("-w", "--browser", "--open", dest="browser", action="store_true", help="Open the HTML file in your default browser.")
+    render_parser.add_argument("host", help="The hostname for the remote process.")
+    render_parser.add_argument("port", help="The port number for the remote process.")
+
     return parser
 
 
@@ -80,6 +90,20 @@ def do_record(command, output=None):
 
 def do_render(input_file, output_file, open_browser):
     render(input_file, output_file, open_browser)
+
+
+def do_remote(host, port, start=False, cancel=False, render=False, exit=False, open_browser=False):
+    url = f"http://{host_name}:{port_number}/"
+    if render:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            output = Path(tmpdir, "trace.txt")
+            render_remote(url + "render", output, open_browser)
+    elif start:
+        print(urllib.urlopen(url + "start").read())
+    elif cancel:
+        print(urllib.urlopen(url + "stop").read())
+    elif exit:
+        print(urllib.urlopen(url + "exit").read())
 
 
 def do_run(command, output=None, open_browser=False):
@@ -115,6 +139,10 @@ def main(args: list[str] | None = None) -> int:
 
     if opts.command == "run":
         do_run(opts.record_command, opts.output, opts.browser)
+        return 0
+
+    if opts.command == "remote":
+        do_remote(opts.host, opts.port, opts.start, opts.cancel, opts.render, opts.exit, opts.browser)
         return 0
     
     if opts.command:
