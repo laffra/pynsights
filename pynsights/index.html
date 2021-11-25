@@ -323,11 +323,11 @@ function timelineClick(event) {
     const [x, gotoWhen] = getXWhen(event);
     playIndex = 0;
     // use linear search, even for large recordings, binary search is overkill
+    console.log(playIndex, getWhen(playIndex), gotoWhen)
     while (playIndex < calls.length && getWhen(playIndex) < gotoWhen) {
         playIndex++;
     }
     reloadWith("time", `${playIndex}`);
-    startPlaying();
 }
 $('#timemax').text((programDuration / 1000).toFixed(1) + "s");
 $('#timeline').click((event) => {
@@ -1028,8 +1028,10 @@ function resetLinkCounts() {
 }
 
 function playCalls() {
+    console.log("play calls", playIndex)
     if (playIndex >= calls.length) {
         playIndex = settings.time >= calls.length ? 0 : settings.time;
+        console.log("update play calls", playIndex)
     } 
     if (playIndex == 0) resetLinkCounts();
     const clockStart = getTimeMillis();
@@ -1038,6 +1040,7 @@ function playCalls() {
     function playChunk() {
         if (!isPlaying()) return;
         const chunkEnd = findChunkEnd(playIndex);
+        console.log("play chunk", playIndex, chunkEnd)
         while (isPlaying() && playIndex < chunkEnd) {
             const call = calls[playIndex++];
             addToGraph(call);

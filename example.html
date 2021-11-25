@@ -265,129 +265,129 @@ var paused = false;
 
 const modulenames = ["pynsights.pynsights.record", "pynsights.pynsights.cli", "python.runpy", "python.pkgutil", "python.zipimport", "python.importlib", "pynsights.example", "python.importlib", "pynsights.hello", "pynsights.hello.helloworld", "pynsights.hello.hello", "pynsights.hello.world", "python.threading"] // [];
 const callsites = [[1, 0], [1, 2], [2, 3], [3, 4], [4, 5], [3, 5], [2, 0], [2, 6], [6, 7], [7, 5], [5, 7], [7, 8], [5, 4], [7, 9], [9, 7], [7, 10], [7, 11], [6, 0], [6, 9], [9, 10], [9, 11], [0, 12]] // [];
-const calls = [[234, 18, 1], [389, 19, 1], [389, 20, 1], [394, 18, 1], [546, 19, 1], [546, 20, 1], [550, 18, 1], [705, 19, 1], [705, 20, 1], [709, 18, 1], [863, 19, 1], [863, 20, 1], [867, 18, 1], [1019, 19, 1], [1019, 20, 1], [1023, 18, 1], [1175, 19, 1], [1175, 20, 1], [1179, 18, 1], [1330, 19, 1], [1330, 20, 1], [1335, 18, 1], [1487, 19, 1], [1487, 20, 1], [1492, 18, 1], [1644, 19, 1], [1644, 20, 1], [1648, 18, 1], [1802, 19, 1], [1802, 20, 1]] // [];
-const cpus = [[27, 0.0, 10.8], [786, 3.0, 6.1], [1286, 0.2, 6.0], [1787, 0.2, 5.0], [1807, 2.4, 9.5]] // [];
+const calls = [[332, 18, 1], [484, 19, 1], [484, 20, 1], [490, 18, 1], [644, 19, 1], [644, 20, 1], [654, 18, 1], [809, 19, 1], [809, 20, 1], [818, 18, 1], [972, 19, 1], [972, 20, 1], [977, 18, 1], [1128, 19, 1], [1128, 20, 1], [1137, 18, 1], [1289, 19, 1], [1289, 20, 1], [1294, 18, 1], [1445, 19, 1], [1445, 20, 1], [1456, 18, 1], [1610, 19, 1], [1610, 20, 1], [1623, 18, 1], [1776, 19, 1], [1776, 20, 1], [1786, 18, 1], [1937, 19, 1], [1937, 20, 1]] // [];
+const cpus = [[22, 0.0, 32.6], [928, 4.0, 22.7], [1433, 0.3, 14.2], [1934, 0.6, 15.0], [1944, 6.4, 23.1]] // [];
 const memories = [
     [
-        27,
-        22151168.0
+        22,
+        22659072.0
     ],
     [
-        786,
-        27279360.0
+        928,
+        28131328.0
     ],
     [
-        1286,
-        27283456.0
+        1433,
+        28131328.0
     ],
     [
-        1787,
-        27283456.0
+        1934,
+        28131328.0
     ],
     [
-        1807,
-        27283456.0
+        1944,
+        28131328.0
     ]
 ] // [];
 const types = ["member_descriptor", "enum.EnumMeta", "function", "frozenset", "getset_descriptor", "method_descriptor", "int", "weakref", "abc.ABCMeta", "builtin_function_or_method", "wrapper_descriptor", "set", "_io.BufferedReader", "tuple", "_io.BufferedWriter", "list", "code", "type", "dict", "str", "Total#Heap#Size#and#Count"] // [];
 const heap = [
-    [1807, [[0, 372, 23808], [1, 29, 30688], [2, 253, 34408], [3, 106, 36464], [4, 637, 40768], [5, 936, 67392], [6, 2248, 67648], [7, 1118, 80496], [8, 81, 81608], [9, 1140, 82080], [10, 1223, 88056], [11, 110, 100560], [12, 1, 131240], [13, 3167, 183104], [14, 3, 266744], [15, 4091, 392920], [16, 4232, 750182], [17, 893, 760840], [18, 3040, 1641624], [19, 18107, 1835242], [20, 48950, 7444716]]]
+    [1944, [[0, 372, 23808], [1, 29, 30688], [2, 253, 34408], [3, 106, 36464], [4, 637, 40768], [5, 936, 67392], [6, 2247, 67620], [7, 1118, 80496], [8, 81, 81608], [9, 1140, 82080], [10, 1223, 88056], [11, 110, 100560], [12, 1, 131240], [13, 3167, 183104], [14, 3, 266744], [15, 4090, 392864], [16, 4232, 750182], [17, 893, 760840], [18, 3039, 1641392], [19, 18114, 1835639], [20, 48953, 7444749]]]
 ] // [];
 const gcs = [
-    [117, 1, 0, 0],
-    [280, 0, 0, 0],
-    [280, 0, 0, 0],
-    [281, 0, 0, 0],
-    [281, 0, 0, 0],
-    [394, 5, 0, 0],
-    [550, 4, 0, 0],
-    [709, 4, 0, 0],
-    [867, 4, 0, 0],
-    [1023, 4, 0, 0],
-    [1179, 4, 0, 0],
-    [1334, 4, 0, 0],
-    [1492, 5, 0, 0],
-    [1648, 4, 0, 0],
-    [1807, 5, 0, 0],
-    [1811, 4, 5, 0],
-    [2093, 1, 0, 0],
-    [2093, 0, 0, 0],
-    [2093, 0, 0, 0],
-    [2093, 0, 0, 0]
+    [127, 11, 0, 0],
+    [423, 0, 0, 0],
+    [423, 0, 0, 0],
+    [423, 0, 0, 0],
+    [423, 0, 0, 0],
+    [490, 6, 0, 0],
+    [654, 10, 0, 0],
+    [818, 9, 0, 0],
+    [977, 5, 0, 0],
+    [1137, 9, 0, 0],
+    [1294, 5, 0, 0],
+    [1456, 11, 0, 0],
+    [1623, 13, 0, 0],
+    [1786, 10, 0, 0],
+    [1944, 7, 0, 0],
+    [1952, 7, 5, 0],
+    [2368, 4, 0, 0],
+    [2368, 0, 0, 0],
+    [2368, 0, 0, 0],
+    [2368, 0, 0, 0]
 ] // [];
 const annotations = [
     [
-        234,
+        332,
         "start"
     ],
     [
-        1807,
+        1944,
         "end"
     ]
 ] // [];
 const spans = [
     [
-        234,
-        18,
-        155,
-        "helloworld"
-    ],
-    [
-        394,
+        332,
         18,
         152,
         "helloworld"
     ],
     [
-        550,
-        18,
-        155,
-        "helloworld"
-    ],
-    [
-        709,
+        490,
         18,
         154,
         "helloworld"
     ],
     [
-        867,
+        654,
         18,
-        152,
+        155,
         "helloworld"
     ],
     [
-        1023,
+        818,
         18,
-        152,
+        154,
         "helloworld"
     ],
     [
-        1179,
+        977,
         18,
         151,
         "helloworld"
     ],
     [
-        1335,
+        1137,
         18,
         152,
         "helloworld"
     ],
     [
-        1492,
+        1294,
         18,
-        152,
+        151,
         "helloworld"
     ],
     [
-        1648,
+        1456,
         18,
         154,
         "helloworld"
+    ],
+    [
+        1623,
+        18,
+        153,
+        "helloworld"
+    ],
+    [
+        1786,
+        18,
+        151,
+        "helloworld"
     ]
 ] // [];
-const programDuration = 1807 // 1;
+const programDuration = 1944 // 1;
 
 const memoryScores = {};
 const cpuScores = {};
@@ -435,6 +435,7 @@ function getXWhen(event) {
 function timelineClick(event) {
     stopPlaying();
     const [x, gotoWhen] = getXWhen(event);
+    console.log("click", x , gotoWhen, toHourMinSec(gotoWhen));
     playIndex = 0;
     // use linear search, even for large recordings, binary search is overkill
     while (playIndex < calls.length && getWhen(playIndex) < gotoWhen) {
@@ -1142,8 +1143,10 @@ function resetLinkCounts() {
 }
 
 function playCalls() {
+    console.log("play calls", playIndex)
     if (playIndex >= calls.length) {
         playIndex = settings.time >= calls.length ? 0 : settings.time;
+        console.log("update play calls", playIndex)
     } 
     if (playIndex == 0) resetLinkCounts();
     const clockStart = getTimeMillis();
@@ -1152,6 +1155,7 @@ function playCalls() {
     function playChunk() {
         if (!isPlaying()) return;
         const chunkEnd = findChunkEnd(playIndex);
+        console.log("play chunk", playIndex, chunkEnd)
         while (isPlaying() && playIndex < chunkEnd) {
             const call = calls[playIndex++];
             addToGraph(call);

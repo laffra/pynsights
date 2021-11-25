@@ -21,7 +21,7 @@ gcs = []
 memories = []
 annotations = []
 spans = []
-last_when = 0
+first_when = 0
 last_call = {}
 when = 0
 
@@ -108,7 +108,7 @@ def add_call(when, callsite):
     source, target = callsites[callsite]
 
 def handle_line(line):
-    global last_when, when
+    global first_when, when
     if not line:
         return
     items = line.replace("\n", "").split()
@@ -137,38 +137,35 @@ def handle_line(line):
     elif kind == EVENT_CALL:
         callsite = int(items[1])
         add_call(when, callsite)
-        last_when = when
     elif kind == EVENT_RETURN:
         callsite, duration, codename = int(items[1]), int(items[2]), items[3]
         if not skip_call(callsite):
             spans.append([when - duration, callsite, duration, codename])
-        last_when = when
         flush_call_sites()
     elif kind == EVENT_ANNOTATE:
         message = " ".join(items[1:])
         annotations.append((when, message))
-        last_when = when
         flush_call_sites()
     elif kind == EVENT_ENTER:
         message = " ".join(items[1:])
         annotations.append((when, f"Enter {message}"))
-        last_when = when
         flush_call_sites()
     elif kind == EVENT_EXIT:
         message = " ".join(items[1:])
         annotations.append((when, f"Exit {message}"))
-        last_when = when
         flush_call_sites()
     elif kind == EVENT_TIMESTAMP:
-        when = int(items[1])
-        last_when = when
+        timestamp = int(items[1])
+        first_when = first_when or timestamp
+        when = timestamp - first_when
 
 
 def generate(output):
     with open(template_file) as fin:
         template = fin.read()
+    print(f" - Program duration: {(when - first_when)/1000:.1f}s")
     html = template\
-        .replace("/*DURATION*/", str(last_when) + " //") \
+        .replace("/*DURATION*/", str(when) + " //") \
         .replace("/*MODULENAMES*/", json.dumps(modulenames) + " //") \
         .replace("/*CALLSITES*/", json.dumps(callsites) + " //") \
         .replace("/*CALLS*/", json.dumps(calls) + " //") \
