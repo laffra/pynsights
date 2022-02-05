@@ -23,7 +23,7 @@ python -m pynsights record [-o <tracefilename>] <modulename>
 To view the recording, run:
 
 ```
-python -m render [-w] <tracefilename>
+python -m pynsights render [-w] <tracefilename>
 ```
 
 This CLI command converts the recording into a standalone HTML format. When
