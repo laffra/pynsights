@@ -231,7 +231,7 @@
         </div>
         <script type="module">
 
-import { UnrealBloomPass } from 'https://cdn.skypack.dev/three@0.126.1/examples/jsm/postprocessing/UnrealBloomPass.js';
+import { UnrealBloomPass } from 'https://unpkg.com/three@0.126.1/examples/jsm/postprocessing/UnrealBloomPass.js';
 
 const PARTICLE_SIZE = 4;
 const PARTICLE_COLOR_SYSTEM = 'white';
@@ -265,129 +265,125 @@ var paused = false;
 
 const modulenames = ["pynsights.pynsights.record", "pynsights.pynsights.cli", "python.runpy", "python.pkgutil", "python.zipimport", "python.importlib", "pynsights.example", "python.importlib", "pynsights.hello", "pynsights.hello.helloworld", "pynsights.hello.hello", "pynsights.hello.world", "python.threading"] // [];
 const callsites = [[1, 0], [1, 2], [2, 3], [3, 4], [4, 5], [3, 5], [2, 0], [2, 6], [6, 7], [7, 5], [5, 7], [7, 8], [5, 4], [7, 9], [9, 7], [7, 10], [7, 11], [6, 0], [6, 9], [9, 10], [9, 11], [0, 12]] // [];
-const calls = [[332, 18, 1], [484, 19, 1], [484, 20, 1], [490, 18, 1], [644, 19, 1], [644, 20, 1], [654, 18, 1], [809, 19, 1], [809, 20, 1], [818, 18, 1], [972, 19, 1], [972, 20, 1], [977, 18, 1], [1128, 19, 1], [1128, 20, 1], [1137, 18, 1], [1289, 19, 1], [1289, 20, 1], [1294, 18, 1], [1445, 19, 1], [1445, 20, 1], [1456, 18, 1], [1610, 19, 1], [1610, 20, 1], [1623, 18, 1], [1776, 19, 1], [1776, 20, 1], [1786, 18, 1], [1937, 19, 1], [1937, 20, 1]] // [];
-const cpus = [[22, 0.0, 32.6], [928, 4.0, 22.7], [1433, 0.3, 14.2], [1934, 0.6, 15.0], [1944, 6.4, 23.1]] // [];
+const calls = [[164, 18, 1], [317, 19, 1], [317, 20, 1], [322, 18, 1], [473, 19, 1], [473, 20, 1], [476, 18, 1], [632, 19, 1], [632, 20, 1], [636, 18, 1], [786, 19, 1], [786, 20, 1], [791, 18, 1], [945, 19, 1], [945, 20, 1], [949, 18, 1], [1104, 19, 1], [1104, 20, 1], [1109, 18, 1], [1261, 19, 1], [1261, 20, 1], [1266, 18, 1], [1420, 19, 1], [1420, 20, 1], [1425, 18, 1], [1575, 19, 1], [1575, 20, 1], [1579, 18, 1], [1733, 19, 1], [1733, 20, 1]] // [];
+const cpus = [[0, 0.0, 11.0], [746, 2.9, 5.9], [1250, 0.2, 4.3], [1737, 0.3, 8.7]] // [];
 const memories = [
     [
-        22,
-        22659072.0
+        0,
+        22405120.0
     ],
     [
-        928,
-        28131328.0
+        746,
+        27398144.0
     ],
     [
-        1433,
-        28131328.0
+        1250,
+        27398144.0
     ],
     [
-        1934,
-        28131328.0
-    ],
-    [
-        1944,
-        28131328.0
+        1737,
+        27398144.0
     ]
 ] // [];
 const types = ["member_descriptor", "enum.EnumMeta", "function", "frozenset", "getset_descriptor", "method_descriptor", "int", "weakref", "abc.ABCMeta", "builtin_function_or_method", "wrapper_descriptor", "set", "_io.BufferedReader", "tuple", "_io.BufferedWriter", "list", "code", "type", "dict", "str", "Total#Heap#Size#and#Count"] // [];
 const heap = [
-    [1944, [[0, 372, 23808], [1, 29, 30688], [2, 253, 34408], [3, 106, 36464], [4, 637, 40768], [5, 936, 67392], [6, 2247, 67620], [7, 1118, 80496], [8, 81, 81608], [9, 1140, 82080], [10, 1223, 88056], [11, 110, 100560], [12, 1, 131240], [13, 3167, 183104], [14, 3, 266744], [15, 4090, 392864], [16, 4232, 750182], [17, 893, 760840], [18, 3039, 1641392], [19, 18114, 1835639], [20, 48953, 7444749]]]
+    [1737, [[0, 372, 23808], [1, 29, 30688], [2, 253, 34408], [3, 106, 36464], [4, 637, 40768], [5, 936, 67392], [6, 2247, 67620], [7, 1117, 80424], [8, 81, 81608], [9, 1140, 82080], [10, 1223, 88056], [11, 110, 100560], [12, 1, 131240], [13, 3166, 183056], [14, 3, 266744], [15, 4086, 392520], [16, 4232, 750182], [17, 893, 760264], [18, 3034, 1641024], [19, 18097, 1834497], [20, 48917, 7439263]]]
 ] // [];
 const gcs = [
-    [127, 11, 0, 0],
-    [423, 0, 0, 0],
-    [423, 0, 0, 0],
-    [423, 0, 0, 0],
-    [423, 0, 0, 0],
-    [490, 6, 0, 0],
-    [654, 10, 0, 0],
-    [818, 9, 0, 0],
-    [977, 5, 0, 0],
-    [1137, 9, 0, 0],
-    [1294, 5, 0, 0],
-    [1456, 11, 0, 0],
-    [1623, 13, 0, 0],
-    [1786, 10, 0, 0],
-    [1944, 7, 0, 0],
-    [1952, 7, 5, 0],
-    [2368, 4, 0, 0],
-    [2368, 0, 0, 0],
-    [2368, 0, 0, 0],
-    [2368, 0, 0, 0]
+    [67, 2, 0, 0],
+    [242, 0, 0, 0],
+    [242, 0, 0, 0],
+    [242, 0, 0, 0],
+    [242, 0, 0, 0],
+    [322, 5, 0, 0],
+    [476, 3, 0, 0],
+    [636, 4, 0, 0],
+    [791, 4, 0, 0],
+    [949, 4, 0, 0],
+    [1108, 4, 0, 0],
+    [1266, 4, 0, 0],
+    [1425, 5, 0, 0],
+    [1579, 4, 0, 0],
+    [1737, 4, 0, 0],
+    [1741, 3, 5, 0],
+    [2012, 1, 0, 0],
+    [2012, 0, 0, 0],
+    [2012, 0, 0, 0],
+    [2012, 0, 0, 0]
 ] // [];
 const annotations = [
     [
-        332,
+        164,
         "start"
     ],
     [
-        1944,
+        1737,
         "end"
     ]
 ] // [];
 const spans = [
     [
-        332,
-        18,
-        152,
-        "helloworld"
-    ],
-    [
-        490,
-        18,
-        154,
-        "helloworld"
-    ],
-    [
-        654,
-        18,
-        155,
-        "helloworld"
-    ],
-    [
-        818,
-        18,
-        154,
-        "helloworld"
-    ],
-    [
-        977,
-        18,
-        151,
-        "helloworld"
-    ],
-    [
-        1137,
-        18,
-        152,
-        "helloworld"
-    ],
-    [
-        1294,
-        18,
-        151,
-        "helloworld"
-    ],
-    [
-        1456,
-        18,
-        154,
-        "helloworld"
-    ],
-    [
-        1623,
+        164,
         18,
         153,
         "helloworld"
     ],
     [
-        1786,
+        322,
         18,
         151,
         "helloworld"
+    ],
+    [
+        476,
+        18,
+        156,
+        "helloworld"
+    ],
+    [
+        636,
+        18,
+        150,
+        "helloworld"
+    ],
+    [
+        791,
+        18,
+        154,
+        "helloworld"
+    ],
+    [
+        949,
+        18,
+        155,
+        "helloworld"
+    ],
+    [
+        1109,
+        18,
+        153,
+        "helloworld"
+    ],
+    [
+        1266,
+        18,
+        154,
+        "helloworld"
+    ],
+    [
+        1425,
+        18,
+        150,
+        "helloworld"
+    ],
+    [
+        1579,
+        18,
+        154,
+        "helloworld"
     ]
 ] // [];
-const programDuration = 1944 // 1;
+const programDuration = 1737 // 1;
 
 const memoryScores = {};
 const cpuScores = {};
@@ -435,14 +431,13 @@ function getXWhen(event) {
 function timelineClick(event) {
     stopPlaying();
     const [x, gotoWhen] = getXWhen(event);
-    console.log("click", x , gotoWhen, toHourMinSec(gotoWhen));
     playIndex = 0;
     // use linear search, even for large recordings, binary search is overkill
+    console.log(playIndex, getWhen(playIndex), gotoWhen)
     while (playIndex < calls.length && getWhen(playIndex) < gotoWhen) {
         playIndex++;
     }
     reloadWith("time", `${playIndex}`);
-    startPlaying();
 }
 $('#timemax').text((programDuration / 1000).toFixed(1) + "s");
 $('#timeline').click((event) => {
