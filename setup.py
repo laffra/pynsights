@@ -22,7 +22,7 @@ class CustomInstall(install):
 
 setup(
     name = 'pyinsights',
-    version = '0.1.61',
+    version = '0.1.62',
     packages = find_packages(),
     install_requires = REQUIRED_PACKAGES,
     include_package_data=True,
