@@ -50,6 +50,12 @@ parent module. This reduces the complexity of the graph quite a bit.
 
 ![Tracing toplevel modules using Pynsights](images/ikke-toplevel.gif)
 
+# Flame Graphs
+
+To analyze performance aspects, Pynsights comes with a rudimentary implementation to overlay flame graphs over the timeline:
+
+![Pynsights Flame Graphs](images/flame-graph.jpeg)
+
 # Bloom
 
 Enable or disable `Bloom` to change the graph rendering.
